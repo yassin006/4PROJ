@@ -1,41 +1,35 @@
-// src/incidents/schemas/incident.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export type IncidentDocument = Incident & Document;
-
-@Schema({ timestamps: true })
+@Schema()
 export class Incident {
+  @Prop({ required: true })
+  title: string;
+
+  @Prop({ required: true })
+  description: string;
+
   @Prop({ required: true })
   type: string;
 
-  @Prop()
-  status: string;
-
-  @Prop()
-  title: string;
-
-  @Prop()
-  description: string;
-
   @Prop({
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point',
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      required: true,
-    },
+    type: { type: String, enum: ['Point'] },
+    coordinates: { type: [Number] },
   })
-  location: {
-    type: 'Point';
-    coordinates: [number, number];
-  };
+  location: { type: string; coordinates: number[] };
+
+  @Prop({ required: true })
+  createdBy: string;
+
+  @Prop({ default: 0 })
+  validations: number;
+
+  @Prop({ default: 0 })
+  invalidations: number;
+
+  @Prop()
+  image: string;
 }
 
+export type IncidentDocument = Incident & Document;
 export const IncidentSchema = SchemaFactory.createForClass(Incident);
-
-// 🔥 Important : index géospatial
-IncidentSchema.index({ location: '2dsphere' });

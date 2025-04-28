@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PredictionsController } from './predictions.controller';
 import { PredictionsService } from './predictions.service';
-import { Incident, IncidentSchema } from 'src/incidents/entities/incident.schema';
+import { Incident, IncidentSchema } from '../incidents/entities/incident.schema';
 
 @Module({
   imports: [

@@ -1,0 +1,15 @@
+✅ Test Report Summary for backend (NestJS)
+
+Test Suites: 8 passed, 8 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+----------------------------------------
+List of Test Suites Passed:
+- src/app.controller.spec.ts
+- src/users/users.service.spec.ts
+- src/users/users.controller.spec.ts
+- src/stats/stats.controller.spec.ts
+- src/auth/auth.service.spec.ts
+- src/incidents/incidents.controller.spec.ts
+- src/auth/auth.controller.spec.ts
+- src/predictions/predictions.controller.spec.ts

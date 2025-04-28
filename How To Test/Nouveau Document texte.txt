@@ -1,0 +1,88 @@
+# -----------------------
+# Authentification
+# -----------------------
+
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "test1234"
+}
+
+---
+
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "test1234"
+}
+
+---
+
+GET http://localhost:3000/auth/me
+Authorization: Bearer <your_token>
+
+---
+
+POST http://localhost:3000/auth/logout
+Authorization: Bearer <your_token>
+
+# -----------------------
+# Stats
+# -----------------------
+
+GET http://localhost:3000/stats/incidents
+Authorization: Bearer <your_token>
+
+# -----------------------
+# Incidents
+# -----------------------
+
+POST http://localhost:3000/incidents
+Authorization: Bearer <your_token>
+Content-Type: multipart/form-data
+
+Fields:
+- title: Test Incident
+- description: Ceci est un test d'incident
+- type: accident
+- location: {"type":"Point","coordinates":[3.876716,43.610769]}
+- image: (fichier image)
+
+---
+
+POST http://localhost:3000/incidents/:id/validate
+Authorization: Bearer <your_token>
+
+---
+
+POST http://localhost:3000/incidents/:id/invalidate
+Authorization: Bearer <your_token>
+
+# -----------------------
+# Routes
+# -----------------------
+
+POST http://localhost:3000/routes/calculate
+Content-Type: application/json
+
+{
+  "start": { "lat": 43.610769, "lng": 3.876716 },
+  "end": { "lat": 43.296482, "lng": 5.36978 },
+  "options": { "avoidTolls": true }
+}
+
+---
+
+POST http://localhost:3000/routes/recalculate
+Content-Type: application/json
+
+{
+  "start": { "lat": 43.610769, "lng": 3.876716 },
+  "end": { "lat": 43.296482, "lng": 5.36978 },
+  "incident": { "lat": 43.5, "lng": 4.5 }
+}
