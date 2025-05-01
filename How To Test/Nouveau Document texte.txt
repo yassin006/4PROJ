@@ -1,3 +1,4 @@
+
 # -----------------------
 # Authentification
 # -----------------------
@@ -19,6 +20,25 @@ Content-Type: application/json
 {
   "email": "test@example.com",
   "password": "test1234"
+}
+
+---
+
+POST http://localhost:3000/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+---
+
+POST http://localhost:3000/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "<reset_token_received_via_email>",
+  "newPassword": "newStrongPassword123"
 }
 
 ---
@@ -46,12 +66,15 @@ POST http://localhost:3000/incidents
 Authorization: Bearer <your_token>
 Content-Type: multipart/form-data
 
-Fields:
+Body (form-data) :
 - title: Test Incident
-- description: Ceci est un test d'incident
+- description: Ceci est un test enrichi
 - type: accident
 - location: {"type":"Point","coordinates":[3.876716,43.610769]}
-- image: (fichier image)
+- severity: high    (opt)
+- status: pending   (opt)
+- source: user      (opt)
+- image: (fichier image réel)
 
 ---
 

@@ -1,10 +1,13 @@
-import { IsNumber, IsOptional, ValidateNested } from 'class-validator';
+// src/routes/dto/calculate-route.dto.ts
+import { IsNumber, IsOptional, ValidateNested, IsDefined } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class CoordinatesDto {
+  @IsDefined()
   @IsNumber()
   lat: number;
 
+  @IsDefined()
   @IsNumber()
   lng: number;
 }
@@ -15,10 +18,12 @@ class OptionsDto {
 }
 
 export class CalculateRouteDto {
+  @IsDefined()
   @ValidateNested()
   @Type(() => CoordinatesDto)
   start: CoordinatesDto;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => CoordinatesDto)
   end: CoordinatesDto;

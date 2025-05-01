@@ -1,3 +1,4 @@
+// src/routes/routes.controller.ts
 import { Controller, Post, Body } from '@nestjs/common';
 import { RoutesService } from './routes.service';
 import { CalculateRouteDto } from './dto/calculate-route.dto';
@@ -8,12 +9,12 @@ export class RoutesController {
   constructor(private readonly routesService: RoutesService) {}
 
   @Post('calculate')
-  calculateRoute(@Body() calculateRouteDto: CalculateRouteDto) {
+  async calculateRoute(@Body() calculateRouteDto: CalculateRouteDto) {
     return this.routesService.calculateRoute(calculateRouteDto);
   }
 
   @Post('recalculate')
-  recalculateRoute(@Body() recalculateRouteDto: RecalculateRouteDto) {
+  async recalculateRoute(@Body() recalculateRouteDto: RecalculateRouteDto) {
     return this.routesService.recalculateRoute(recalculateRouteDto);
   }
 }

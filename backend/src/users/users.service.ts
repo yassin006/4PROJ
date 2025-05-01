@@ -56,4 +56,43 @@ export class UsersService {
       password: undefined, // pour éviter les erreurs
     });
   }
+
+  async setResetToken(email: string, token: string, expiration: Date) {
+    return this.userModel.findOneAndUpdate(
+      { email },
+      {
+        resetToken: token,
+        resetTokenExpiration: expiration,
+      },
+      { new: true },
+    );
+  }
+  
+  async findByResetToken(token: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({
+      resetToken: token,
+      resetTokenExpiration: { $gt: new Date() },
+    });
+  }
+  
+  async clearResetToken(userId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, {
+      resetToken: null,
+      resetTokenExpiration: null,
+    });
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await this.userModel.findByIdAndDelete(id);
+  }
+
+  async UserdeleteUser(id: string): Promise<void> {
+    await this.userModel.findByIdAndDelete(id);
+  }
+  
+  async updateUserRole(id: string, role: 'user' | 'admin' | 'moderator'): Promise<void> {
+    await this.userModel.findByIdAndUpdate(id, { role });
+  }
+  
+  
 }

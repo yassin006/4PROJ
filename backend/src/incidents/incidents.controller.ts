@@ -9,6 +9,7 @@ import {
   Request,
   Get,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -25,7 +26,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}
 
-  // Create an incident
+  // ✅ Create an incident
   @UseGuards(JwtAuthGuard)
   @Post()
   @UseInterceptors(
@@ -49,16 +50,9 @@ export class IncidentsController {
     const userId = req.user.userId;
     const imageFilename = image?.filename ?? null;
 
-    let parsedLocation: { type: string; coordinates: number[] };
+    const parsedLocation =
+      typeof location === 'string' ? JSON.parse(location) : location;
 
-    // Parse location from string to object if necessary
-    if (typeof location === 'string') {
-      parsedLocation = JSON.parse(location);
-    } else {
-      parsedLocation = location;
-    }
-
-    // Call the create method from IncidentsService
     return this.incidentsService.create(
       {
         title,
@@ -71,25 +65,23 @@ export class IncidentsController {
     );
   }
 
-  // Validate an incident
+  // ✅ Validate an incident
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('moderator', 'admin')
   @Post(':id/validate')
   async validateIncident(@Param('id') id: string) {
-    // Call the validateIncident method from IncidentsService
     return this.incidentsService.validateIncident(id);
   }
 
-  // Invalidate an incident
+  // ✅ Invalidate an incident
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('moderator', 'admin')
   @Post(':id/invalidate')
   async invalidateIncident(@Param('id') id: string) {
-    // Call the invalidateIncident method from IncidentsService
     return this.incidentsService.invalidateIncident(id);
   }
 
-  // Find nearby incidents
+  // ✅ Nearby search
   @UseGuards(JwtAuthGuard)
   @Get('nearby')
   async findNearbyIncidents(
@@ -98,8 +90,23 @@ export class IncidentsController {
   ) {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
-
-    // Call the findNearbyIncidents method from IncidentsService
     return this.incidentsService.findNearbyIncidents(latitude, longitude);
+  }
+
+  // ✅ Admin-only: Get all incidents
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get()
+  async findAll() {
+    return this.incidentsService.findAll();
+  }
+
+  // ✅ Admin-only: Delete an incident
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    await this.incidentsService.delete(id);
+    return { message: 'Incident deleted successfully' };
   }
 }

@@ -15,7 +15,8 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -86,6 +87,16 @@ async googleRedirect(@Req() req: Request) {
     ...userPlain,
     _id: userPlain._id, // 👈 Obligatoire pour le JWT
   });
+}
+
+@Post('forgot-password')
+async forgotPassword(@Body() body: ForgotPasswordDto) {
+  return this.authService.forgotPassword(body.email);
+}
+
+@Post('reset-password')
+async resetPassword(@Body() body: ResetPasswordDto) {
+  return this.authService.resetPassword(body.token, body.newPassword);
 }
 
   

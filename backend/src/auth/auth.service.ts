@@ -1,4 +1,3 @@
-// src/auth/auth.service.ts
 import {
   Injectable,
   UnauthorizedException,
@@ -9,12 +8,16 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../users/entities/user.schema';
+import { v4 as uuidv4 } from 'uuid';
+import { MailService } from '../mail/mail.service';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService, // ✅ injection réelle activée
   ) {}
 
   async register(data: any) {
@@ -52,19 +55,18 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { email: user.email, sub: user._id }; // ✅ sub = _id
+    const payload = { email: user.email, sub: user._id };
     const access_token = this.jwtService.sign(payload, { expiresIn: '1h' });
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
-  
+
     const hashedRefreshToken = await bcrypt.hash(refresh_token, 10);
     await this.usersService.updateRefreshToken(user._id, hashedRefreshToken);
-  
+
     return {
       access_token,
       refresh_token,
     };
   }
-  
 
   async refreshToken(token: string) {
     try {
@@ -95,7 +97,6 @@ export class AuthService {
     await this.usersService.updateRefreshToken(userId, null);
   }
 
-  // 🌐 Persistance et gestion utilisateur Google
   async handleGoogleLogin(profile: any) {
     const existingUser = await this.usersService.findByEmail(profile.email);
 
@@ -103,7 +104,6 @@ export class AuthService {
       return existingUser;
     }
 
-    // Nouveau compte Google => créer un utilisateur sans mot de passe
     const newUser = await this.usersService.create({
       email: profile.email,
       firstName: profile.firstName,
@@ -113,5 +113,37 @@ export class AuthService {
     });
 
     return newUser;
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const token = uuidv4();
+    const expiration = new Date(Date.now() + 1000 * 60 * 10); // 10 minutes
+
+    await this.usersService.setResetToken(email, token, expiration);
+
+    // ✅ Envoi réel d'e-mail
+    await this.mailService.sendResetPasswordEmail(email, token);
+
+    return { message: 'Reset token sent to your email.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const foundUser = await this.usersService.findByResetToken(token);
+    if (!foundUser) throw new UnauthorizedException('Invalid or expired token');
+
+    const user = foundUser as UserDocument;
+
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    await this.usersService.clearResetToken((user as any)._id.toString());
+
+    return { message: 'Password reset successful' };
   }
 }

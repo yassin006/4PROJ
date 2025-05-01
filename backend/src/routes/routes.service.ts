@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+// src/routes/routes.service.ts
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import axios from 'axios';
 import { TrafficMonitorService } from '../traffic-monitor/traffic-monitor.service';
 import { CalculateRouteDto } from './dto/calculate-route.dto';
 import { RecalculateRouteDto } from './recalculate/dto/recalculate-route.dto';
@@ -7,51 +9,66 @@ import { RecalculateRouteDto } from './recalculate/dto/recalculate-route.dto';
 export class RoutesService {
   constructor(private readonly trafficMonitorService: TrafficMonitorService) {}
 
-  calculateRoute(dto: CalculateRouteDto) {
+  async calculateRoute(dto: CalculateRouteDto) {
     const { start, end, options } = dto;
+    const apiKey = process.env.ORS_API_KEY;
 
-    const distanceKm = this.getDistanceFromLatLonInKm(
-      start.lat,
-      start.lng,
-      end.lat,
-      end.lng,
-    );
+    const coordinates = [
+      [start.lng, start.lat],
+      [end.lng, end.lat],
+    ];
 
-    const durationHours = distanceKm / (options?.avoidTolls ? 70 : 90);
-    const durationMinutes = Math.round(durationHours * 60);
-
-    const instructions: string[] = [];
-
-    if (distanceKm < 10) {
-      instructions.push('Utiliser les routes locales pour un trajet rapide');
-    } else if (distanceKm < 50) {
-      instructions.push('Suivre la nationale la plus proche');
-    } else if (distanceKm < 100) {
-      instructions.push('Prendre une route principale, attention aux bouchons');
-    } else {
-      instructions.push('Prendre l\'autoroute principale pour gagner du temps');
-    }
-
-    if (options?.avoidTolls) {
-      instructions.push('Éviter les autoroutes à péage durant le trajet');
-    }
-
-    if (distanceKm > 80) {
-      instructions.push('Faire une pause après 50 kilomètres');
-    }
-
-    if (distanceKm > 150) {
-      instructions.push('Changer d\'autoroute à la jonction A7 direction Marseille');
-    }
-
-    instructions.push('Arriver à destination');
-
-    return {
-      route: [start, end],
-      distance: `${distanceKm.toFixed(1)} km`,
-      duration: `${durationMinutes} minutes`,
-      instructions,
+    const requestBody = {
+      coordinates,
+      instructions: true,
+      preference: options?.avoidTolls ? 'recommended' : 'fastest',
+      options: options?.avoidTolls ? { avoid_features: ['tollways'] } : {},
+      format: 'json',
     };
+    
+
+    try {
+      const response = await axios.post(
+        'https://api.openrouteservice.org/v2/directions/driving-car',
+        requestBody,
+        {
+          headers: {
+            Authorization: apiKey,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const routeData = response.data.routes[0];
+      const distanceKm = routeData.summary.distance / 1000;
+      const durationMin = Math.round(routeData.summary.duration / 60);
+      const instructions = routeData.segments[0]?.steps?.map((step: any) => step.instruction) || [];
+
+      return {
+        route: coordinates,
+        distance: `${distanceKm.toFixed(1)} km`,
+        duration: `${durationMin} minutes`,
+        instructions,
+      };
+    } catch (error) {
+      console.error('❌ ORS API ERROR:', error.response?.status, error.response?.data || error.message);
+
+      // fallback: manual estimate
+      const distanceKm = this.getDistanceFromLatLonInKm(
+        start.lat, start.lng, end.lat, end.lng
+      );
+      const durationHours = distanceKm / (options?.avoidTolls ? 70 : 90);
+      const durationMinutes = Math.round(durationHours * 60);
+
+      const instructions = ['Arriver à destination (fallback calculé localement)'];
+
+      return {
+        route: coordinates,
+        distance: `${distanceKm.toFixed(1)} km`,
+        duration: `${durationMinutes} minutes`,
+        instructions,
+      };
+    }
   }
 
   async recalculateRoute(dto: RecalculateRouteDto) {
