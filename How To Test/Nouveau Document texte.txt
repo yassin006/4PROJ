@@ -1,8 +1,8 @@
+#########################################
+# 🔐 AUTHENTIFICATION
+#########################################
 
-# -----------------------
-# Authentification
-# -----------------------
-
+### Register
 POST http://localhost:3000/auth/register
 Content-Type: application/json
 
@@ -12,8 +12,9 @@ Content-Type: application/json
   "password": "test1234"
 }
 
----
+###
 
+### Login
 POST http://localhost:3000/auth/login
 Content-Type: application/json
 
@@ -22,8 +23,9 @@ Content-Type: application/json
   "password": "test1234"
 }
 
----
+###
 
+### Forgot Password
 POST http://localhost:3000/auth/forgot-password
 Content-Type: application/json
 
@@ -31,8 +33,9 @@ Content-Type: application/json
   "email": "test@example.com"
 }
 
----
+###
 
+### Reset Password
 POST http://localhost:3000/auth/reset-password
 Content-Type: application/json
 
@@ -41,55 +44,62 @@ Content-Type: application/json
   "newPassword": "newStrongPassword123"
 }
 
----
+###
 
+### Get profile
 GET http://localhost:3000/auth/me
 Authorization: Bearer <your_token>
 
----
+###
 
+### Logout
 POST http://localhost:3000/auth/logout
 Authorization: Bearer <your_token>
 
-# -----------------------
-# Stats
-# -----------------------
+#########################################
+# 📊 STATISTIQUES
+#########################################
 
+### Incidents stats
 GET http://localhost:3000/stats/incidents
 Authorization: Bearer <your_token>
 
-# -----------------------
-# Incidents
-# -----------------------
+#########################################
+# 🚨 INCIDENTS
+#########################################
 
+### Create incident
 POST http://localhost:3000/incidents
 Authorization: Bearer <your_token>
 Content-Type: multipart/form-data
 
-Body (form-data) :
-- title: Test Incident
-- description: Ceci est un test enrichi
-- type: accident
-- location: {"type":"Point","coordinates":[3.876716,43.610769]}
-- severity: high    (opt)
-- status: pending   (opt)
-- source: user      (opt)
-- image: (fichier image réel)
+# Form-data fields:
+# - title: Test Incident
+# - description: Ceci est un test enrichi
+# - type: accident
+# - location: {"type":"Point","coordinates":[3.876716,43.610769]}
+# - severity: high      (optionnel)
+# - status: pending     (optionnel)
+# - source: user        (optionnel)
+# - image: (image file)
 
----
+###
 
+### Validate incident
 POST http://localhost:3000/incidents/:id/validate
 Authorization: Bearer <your_token>
 
----
+###
 
+### Invalidate incident
 POST http://localhost:3000/incidents/:id/invalidate
 Authorization: Bearer <your_token>
 
-# -----------------------
-# Routes
-# -----------------------
+#########################################
+# 🧭 ROUTES
+#########################################
 
+### Calculate route
 POST http://localhost:3000/routes/calculate
 Content-Type: application/json
 
@@ -99,8 +109,9 @@ Content-Type: application/json
   "options": { "avoidTolls": true }
 }
 
----
+###
 
+### Recalculate route
 POST http://localhost:3000/routes/recalculate
 Content-Type: application/json
 
