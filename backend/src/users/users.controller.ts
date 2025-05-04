@@ -1,3 +1,4 @@
+// src/users/users.controller.ts
 import {
   Controller,
   Get,
@@ -8,18 +9,26 @@ import {
   Delete,
   Req,
   Patch,
+  Request,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './entities/user.schema';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { v4 as uuidv4 } from 'uuid';
+import { extname } from 'path';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // ✅ Accessible uniquement par les admins
+  // 🔐 ADMIN ONLY
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get()
@@ -37,25 +46,26 @@ export class UsersController {
     return this.usersService.create(userData);
   }
 
-  // ✅ Supprimer un utilisateur (admin uniquement)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @Delete(':id')
-  async delete(@Param('id') id: string): Promise<{ message: string }> {
-    await this.usersService.deleteUser(id);
-    return { message: 'User deleted successfully' };
-  }
+// ✅ Place ceci en premier
+@UseGuards(JwtAuthGuard)
+@Delete('me')
+async deleteOwnAccount(@Req() req: any): Promise<{ message: string }> {
+  const userId = req.user.userId;
+  await this.usersService.deleteUser(userId);
+  return { message: 'Your account has been deleted successfully' };
+}
 
-  // ✅ Supprimer son propre compte
-  @UseGuards(JwtAuthGuard)
-  @Delete('me')
-  async deleteOwnAccount(@Req() req: any): Promise<{ message: string }> {
-    const userId = req.user.userId;
-    await this.usersService.deleteUser(userId);
-    return { message: 'Your account has been deleted successfully' };
-  }
+// ❌ Place celui-ci après
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
+@Delete(':id')
+async delete(@Param('id') id: string): Promise<{ message: string }> {
+  await this.usersService.deleteUser(id);
+  return { message: 'User deleted successfully' };
+}
 
-  // ✅ Changer le rôle d'un utilisateur (admin uniquement)
+
+  // 🔐 ADMIN ONLY – update user role
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch(':id/role')
@@ -65,5 +75,46 @@ export class UsersController {
   ): Promise<{ message: string }> {
     await this.usersService.updateUserRole(id, role);
     return { message: `Role updated to "${role}" successfully` };
+  }
+
+  // ✅ Update own user data
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  async updateMe(
+    @Request() req: any,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User | null> {
+    const userId = req.user.userId;
+    return this.usersService.updateUser(userId, updateUserDto);
+  }
+
+  // ✅ Upload / Change profile image
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/profile-image')
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = uuidv4();
+          const ext = extname(file.originalname);
+          cb(null, `${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/(jpg|jpeg|png|webp)$/)) {
+          cb(new Error('Only image files are allowed!'), false);
+        } else {
+          cb(null, true);
+        }
+      },
+    }),
+  )
+  async uploadProfileImage(
+    @Request() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<User | null> {
+    const userId = req.user.userId;
+    return this.usersService.updateUser(userId, { profileImage: file.filename });
   }
 }

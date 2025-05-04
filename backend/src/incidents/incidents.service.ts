@@ -1,19 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Incident, IncidentDocument } from './entities/incident.schema';
 import { TrafficMonitorService } from '../traffic-monitor/traffic-monitor.service';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { Server } from 'socket.io';
 
 @Injectable()
 export class IncidentsService {
+  private io: Server;
+
   constructor(
     @InjectModel(Incident.name) private readonly incidentModel: Model<IncidentDocument>,
     private readonly trafficMonitorService: TrafficMonitorService,
-    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
-  // ✅ Create an incident + real-time notification
+  // ✅ Setter pour socket.io
+  setSocketInstance(io: Server) {
+    this.io = io;
+  }
+
   async create(dto: any, userId: string, imageFilename?: string): Promise<Incident> {
     const incident = new this.incidentModel({
       ...dto,
@@ -23,8 +28,8 @@ export class IncidentsService {
 
     await incident.save();
 
-    // ✅ Envoi de notification en temps réel
-    this.notificationsGateway.sendIncidentNotification({
+    // ✅ Émission socket
+    this.io?.emit('incident:new', {
       _id: incident._id,
       title: incident.title,
       location: incident.location,
@@ -34,7 +39,6 @@ export class IncidentsService {
       createdBy: incident.createdBy,
     });
 
-    // ✅ Déclenche recalcul du trafic (si implémenté)
     await this.trafficMonitorService.updateRouteBasedOnTraffic({
       incidentDetails: incident,
       trafficConditions: 'Traffic affected by incident',
@@ -43,16 +47,21 @@ export class IncidentsService {
     return incident;
   }
 
-  // ✅ Validate an incident
   async validateIncident(id: string): Promise<Incident> {
     const incident = await this.incidentModel.findById(id);
     if (!incident) throw new NotFoundException('Incident not found');
+  
+    // ⚠️ Vérifier que createdBy est présent
+    if (!incident.createdBy) {
+      throw new BadRequestException('Cannot validate incident: missing createdBy');
+    }
+  
     incident.validations += 1;
     await incident.save();
     return incident;
   }
+  
 
-  // ✅ Invalidate an incident
   async invalidateIncident(id: string): Promise<Incident> {
     const incident = await this.incidentModel.findById(id);
     if (!incident) throw new NotFoundException('Incident not found');
@@ -61,7 +70,6 @@ export class IncidentsService {
     return incident;
   }
 
-  // ✅ Get incidents near a given point
   async findNearbyIncidents(lat: number, lng: number): Promise<Incident[]> {
     return this.incidentModel.find({
       location: {
@@ -73,13 +81,23 @@ export class IncidentsService {
     });
   }
 
-  // ✅ Admin - get all incidents
   async findAll(): Promise<Incident[]> {
     return this.incidentModel.find().exec();
   }
 
-  // ✅ Admin - delete incident
   async delete(id: string): Promise<void> {
     await this.incidentModel.findByIdAndDelete(id);
   }
+
+  async deleteUserIncident(incidentId: string, userId: string): Promise<void> {
+    const incident = await this.incidentModel.findById(incidentId);
+    if (!incident) {
+      throw new NotFoundException('Incident not found');
+    }
+    if (incident.createdBy.toString() !== userId) {
+      throw new UnauthorizedException('You are not allowed to delete this incident');
+    }
+    await this.incidentModel.findByIdAndDelete(incidentId);
+  }
+  
 }

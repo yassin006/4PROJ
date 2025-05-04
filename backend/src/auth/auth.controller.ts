@@ -1,9 +1,11 @@
+// src/auth/auth.controller.ts
 import {
   Body,
   Controller,
   Get,
   Post,
   Req,
+  Res,
   UseGuards,
   ConflictException,
   InternalServerErrorException,
@@ -14,12 +16,15 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UsersService } from '../users/users.service';
+
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService,
+    private readonly usersService: UsersService,) {}
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
@@ -55,49 +60,59 @@ export class AuthController {
   @Post('logout')
   async logout(@Req() req: Request) {
     const user = req.user as any;
-    await this.authService.logout(user.userId);  // ✅ utilise `userId` et non `sub`
+    await this.authService.logout(user.userId); // ✅ utilise userId et non sub
     return { message: 'Logout successful' };
   }
-  
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getProfile(@Req() req: Request) {
-    return req.user;
+  async getProfile(@Req() req: any) {
+    const user = await this.usersService.findById(req.user.userId);
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+    return {
+      userId: user._id,
+      email: user.email,
+      role: user.role,
+      profileImage: user.profileImage,
+    };
   }
+  
+  
 
   // 🌐 Redirection vers Google
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleAuth() {
-    // Rien à faire ici, juste redirection automatique
+    // Juste une redirection automatique
   }
 
-// 🌐 Google OAuth2 callback
-@Get('google/redirect')
-@UseGuards(AuthGuard('google'))
-async googleRedirect(@Req() req: Request) {
-  const googleUser = req.user;
-  const registeredUser = await this.authService.handleGoogleLogin(googleUser);
+  // 🌐 Callback Google avec redirection vers le frontend
+  @Get('google/redirect')
+  @UseGuards(AuthGuard('google'))
+  async googleRedirect(@Req() req: Request, @Res() res: Response) {
+    const googleUser = req.user;
+    const registeredUser = await this.authService.handleGoogleLogin(googleUser);
+    const user = (registeredUser as any).toObject?.() || registeredUser;
 
-  // ✅ On passe un user complet avec `_id`
-  const userPlain = (registeredUser as any).toObject?.() || registeredUser;
+    const tokens = await this.authService.login({
+      ...user,
+      _id: user._id,
+    });
 
-  return this.authService.login({
-    ...userPlain,
-    _id: userPlain._id, // 👈 Obligatoire pour le JWT
-  });
-}
+    return res.redirect(
+      `http://localhost:5173/auth/google/callback?access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}`,
+    );
+  }
 
-@Post('forgot-password')
-async forgotPassword(@Body() body: ForgotPasswordDto) {
-  return this.authService.forgotPassword(body.email);
-}
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    return this.authService.forgotPassword(body.email);
+  }
 
-@Post('reset-password')
-async resetPassword(@Body() body: ResetPasswordDto) {
-  return this.authService.resetPassword(body.token, body.newPassword);
-}
-
-  
+  @Post('reset-password')
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return this.authService.resetPassword(body.token, body.newPassword);
+  }
 }

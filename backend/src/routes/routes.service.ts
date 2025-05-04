@@ -1,9 +1,10 @@
 // src/routes/routes.service.ts
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { TrafficMonitorService } from '../traffic-monitor/traffic-monitor.service';
 import { CalculateRouteDto } from './dto/calculate-route.dto';
 import { RecalculateRouteDto } from './recalculate/dto/recalculate-route.dto';
+import * as polyline from '@mapbox/polyline';
 
 @Injectable()
 export class RoutesService {
@@ -25,7 +26,6 @@ export class RoutesService {
       options: options?.avoidTolls ? { avoid_features: ['tollways'] } : {},
       format: 'json',
     };
-    
 
     try {
       const response = await axios.post(
@@ -46,20 +46,23 @@ export class RoutesService {
 
       return {
         route: coordinates,
+        geometry: routeData.geometry,
         distance: `${distanceKm.toFixed(1)} km`,
         duration: `${durationMin} minutes`,
         instructions,
       };
     } catch (error) {
-      console.error('❌ ORS API ERROR:', error.response?.status, error.response?.data || error.message);
+      console.error(
+        '❌ ORS API ERROR:',
+        error.response?.status,
+        error.response?.data || error.message
+      );
 
-      // fallback: manual estimate
       const distanceKm = this.getDistanceFromLatLonInKm(
         start.lat, start.lng, end.lat, end.lng
       );
       const durationHours = distanceKm / (options?.avoidTolls ? 70 : 90);
       const durationMinutes = Math.round(durationHours * 60);
-
       const instructions = ['Arriver à destination (fallback calculé localement)'];
 
       return {
@@ -71,32 +74,122 @@ export class RoutesService {
     }
   }
 
-  async recalculateRoute(dto: RecalculateRouteDto) {
-    const { start, end, incident } = dto;
-
-    const trafficData = await this.trafficMonitorService.getTrafficConditions(incident);
-
-    if (trafficData.isTrafficHeavy) {
-      return this.avoidTraffic(start, end, trafficData);
-    } else {
+  async recalculateRoute(start: { lat: number; lng: number }, end: { lat: number; lng: number }, incident: { lat: number; lng: number }) {
+    const apiKey = process.env.ORS_API_KEY;
+  
+    const coordinates = [
+      [start.lng, start.lat],
+      [end.lng, end.lat],
+    ];
+  
+    const avoidPolygon = {
+      type: 'Polygon',
+      coordinates: [[
+        [incident.lng - 0.01, incident.lat - 0.01],
+        [incident.lng + 0.01, incident.lat - 0.01],
+        [incident.lng + 0.01, incident.lat + 0.01],
+        [incident.lng - 0.01, incident.lat + 0.01],
+        [incident.lng - 0.01, incident.lat - 0.01]
+      ]]
+    };
+  
+    const body = {
+      coordinates,
+      options: {
+        avoid_polygons: avoidPolygon
+      },
+      radiuses: [5000, 5000], 
+      format: 'json'
+    };
+  
+    try {
+      const response = await axios.post(
+        'https://api.openrouteservice.org/v2/directions/driving-car',
+        body,
+        {
+          headers: {
+            Authorization: apiKey,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+  
+      const geometry = response.data.routes[0].geometry;
+      const decoded = polyline.decode(geometry);
+      const newRoute = decoded.map(([lat, lng]) => ({ lat, lng }));
+  
       return {
-        route: [start, end],
-        message: 'No need to recalculate route, traffic is clear.',
+        newRoute,
+        message: "Traffic detected, recalculated route to avoid congestion.",
+      };
+  
+    } catch (error) {
+      console.error("🔥 ORS ERROR:", error.response?.data || error.message);
+      return {
+        newRoute: [start, end],
+        message: "Fallback route used due to error.",
       };
     }
   }
+  
+    
 
-  private avoidTraffic(start: any, end: any, trafficData: any) {
-    const newRoute = [
-      start,
-      { lat: start.lat + 0.1, lng: start.lng + 0.1 },
-      end,
+  private async avoidTraffic(start: any, end: any, trafficData: any) {
+    const apiKey = process.env.ORS_API_KEY;
+
+    const coordinates = [
+      [start.lng, start.lat],
+      [end.lng, end.lat],
     ];
 
-    return {
-      newRoute,
-      message: 'Traffic detected, recalculating route to avoid congestion.',
+    const avoidPolygon = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [trafficData.lng - 0.01, trafficData.lat - 0.01],
+          [trafficData.lng + 0.01, trafficData.lat - 0.01],
+          [trafficData.lng + 0.01, trafficData.lat + 0.01],
+          [trafficData.lng - 0.01, trafficData.lat + 0.01],
+          [trafficData.lng - 0.01, trafficData.lat - 0.01]
+        ]
+      ]
     };
+
+    const requestBody = {
+      coordinates,
+      instructions: true,
+      options: {
+        avoid_polygons: avoidPolygon
+      },
+      format: 'json',
+    };
+
+    try {
+      const response = await axios.post(
+        'https://api.openrouteservice.org/v2/directions/driving-car',
+        requestBody,
+        {
+          headers: {
+            Authorization: apiKey,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const decodedPolyline = polyline.decode(response.data.routes[0].geometry);
+      const newRoute = decodedPolyline.map(([lat, lng]: [number, number]) => ({ lat, lng }));
+
+      return {
+        newRoute,
+        message: 'Traffic detected, recalculated route to avoid congestion.',
+      };
+    } catch (err) {
+      console.error("ORS avoidTraffic error", err.message);
+      return {
+        newRoute: [start, end],
+        message: 'Fallback route used. Error with ORS recalculation.',
+      };
+    }
   }
 
   private getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {

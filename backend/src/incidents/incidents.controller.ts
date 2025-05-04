@@ -6,17 +6,18 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
-  Request,
   Get,
   Query,
   Delete,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
+import { Request } from 'express';
 
-import { CreateIncidentDto } from './dto/create-incident.dto';
 import { IncidentsService } from './incidents.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -26,9 +27,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}
 
-  // ✅ Create an incident
-  @UseGuards(JwtAuthGuard)
+  // ✅ Create incident (authenticated users)
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -44,20 +45,24 @@ export class IncidentsController {
   async create(
     @UploadedFile() image: Express.Multer.File,
     @Body() body: any,
-    @Request() req: any,
+    @Req() req: Request,
   ) {
-    const { title, description, type, location } = body;
-    const userId = req.user.userId;
-    const imageFilename = image?.filename ?? null;
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      throw new UnauthorizedException('User ID missing from request');
+    }
 
+    const imageFilename = image?.filename ?? null;
     const parsedLocation =
-      typeof location === 'string' ? JSON.parse(location) : location;
+      typeof body.location === 'string'
+        ? JSON.parse(body.location)
+        : body.location;
 
     return this.incidentsService.create(
       {
-        title,
-        description,
-        type,
+        title: body.title,
+        description: body.description,
+        type: body.type,
         location: parsedLocation,
       },
       userId,
@@ -65,23 +70,23 @@ export class IncidentsController {
     );
   }
 
-  // ✅ Validate an incident
+  // ✅ Get all incidents (admin only)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('moderator', 'admin')
+  @Roles('admin')
+  @Get()
+  async findAll() {
+    return this.incidentsService.findAll();
+  }
+
+  // ✅ Validate incident (admin only)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @Post(':id/validate')
-  async validateIncident(@Param('id') id: string) {
+  async validate(@Param('id') id: string) {
     return this.incidentsService.validateIncident(id);
   }
 
-  // ✅ Invalidate an incident
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('moderator', 'admin')
-  @Post(':id/invalidate')
-  async invalidateIncident(@Param('id') id: string) {
-    return this.incidentsService.invalidateIncident(id);
-  }
-
-  // ✅ Nearby search
+  // ✅ Find nearby incidents
   @UseGuards(JwtAuthGuard)
   @Get('nearby')
   async findNearbyIncidents(
@@ -93,20 +98,24 @@ export class IncidentsController {
     return this.incidentsService.findNearbyIncidents(latitude, longitude);
   }
 
-  // ✅ Admin-only: Get all incidents
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @Get()
-  async findAll() {
-    return this.incidentsService.findAll();
+  // ✅ DELETE own incident
+  @UseGuards(JwtAuthGuard)
+  @Delete('user/:id')
+  async deleteUserIncident(
+    @Param('id') incidentId: string,
+    @Req() req: Request,
+  ) {
+    const user = req.user as any;
+    await this.incidentsService.deleteUserIncident(incidentId, user.userId);
+    return { message: 'Incident deleted successfully.' };
   }
 
-  // ✅ Admin-only: Delete an incident
+  // ✅ DELETE any incident (admin only)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    await this.incidentsService.delete(id);
-    return { message: 'Incident deleted successfully' };
+  async deleteIncidentAsAdmin(@Param('id') incidentId: string) {
+    await this.incidentsService.delete(incidentId);
+    return { message: 'Incident deleted by admin.' };
   }
 }

@@ -1,0 +1,50 @@
+@import "leaflet/dist/leaflet.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === Global layout === */
+body {
+  @apply bg-white text-gray-900 antialiased;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+a {
+  @apply text-blue-600 hover:text-blue-800 underline;
+}
+
+button {
+  @apply px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition;
+}
+
+/* === Leaflet popup visibility fix === */
+.leaflet-popup-content-wrapper {
+  background: white !important;
+  color: black !important;
+  opacity: 1 !important;
+  z-index: 10000 !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px;
+  line-height: 1.4;
+}
+
+.leaflet-popup-tip {
+  background: white !important;
+}
+
+.leaflet-container a {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* ✅ React Hot Toast visibility fix */
+.__react-toast, 
+[data-sonner-toast] {
+  z-index: 9999 !important;
+}

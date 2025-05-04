@@ -10,14 +10,13 @@ import * as bcrypt from 'bcryptjs';
 import { UserDocument } from '../users/entities/user.schema';
 import { v4 as uuidv4 } from 'uuid';
 import { MailService } from '../mail/mail.service';
-import { Types } from 'mongoose';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly mailService: MailService, // ✅ injection réelle activée
+    private readonly mailService: MailService,
   ) {}
 
   async register(data: any) {
@@ -55,7 +54,12 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { email: user.email, sub: user._id };
+    const payload = {
+      email: user.email,
+      sub: user._id,
+      role: user.role,
+      profileImage: user.profileImage || null, // ✅ inclus dans le JWT
+    };
     const access_token = this.jwtService.sign(payload, { expiresIn: '1h' });
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
 
@@ -83,7 +87,12 @@ export class AuthService {
 
       const userDoc = user as UserDocument;
       const newAccessToken = this.jwtService.sign(
-        { email: userDoc.email, sub: userDoc._id },
+        {
+          email: userDoc.email,
+          sub: userDoc._id,
+          role: userDoc.role,
+          profileImage: userDoc.profileImage || null,
+        },
         { expiresIn: '1h' },
       );
 
@@ -100,9 +109,7 @@ export class AuthService {
   async handleGoogleLogin(profile: any) {
     const existingUser = await this.usersService.findByEmail(profile.email);
 
-    if (existingUser) {
-      return existingUser;
-    }
+    if (existingUser) return existingUser;
 
     const newUser = await this.usersService.create({
       email: profile.email,
@@ -124,8 +131,9 @@ export class AuthService {
 
     await this.usersService.setResetToken(email, token, expiration);
 
-    // ✅ Envoi réel d'e-mail
-    await this.mailService.sendResetPasswordEmail(email, token);
+    const resetLink = `http://localhost:5173/RESET-password?token=${token}`;
+
+    await this.mailService.sendResetPasswordEmail(email, resetLink);
 
     return { message: 'Reset token sent to your email.' };
   }
@@ -142,7 +150,7 @@ export class AuthService {
     user.password = hashedPassword;
     await user.save();
 
-    await this.usersService.clearResetToken((user as any)._id.toString());
+    await this.usersService.clearResetToken(user.id);
 
     return { message: 'Password reset successful' };
   }

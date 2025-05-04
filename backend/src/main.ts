@@ -1,3 +1,4 @@
+// src/main.ts
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -5,34 +6,62 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Server } from 'socket.io';
+import { createServer } from 'http';
+import { ExpressAdapter } from '@nestjs/platform-express'; // ✅ à ajouter
+import * as express from 'express';
+import { IncidentsService } from './incidents/incidents.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const expressApp = express();
+  const app = await NestFactory.create<NestExpressApplication>(
+    AppModule,
+    new ExpressAdapter(expressApp), // ✅ fix important
+  );
 
-  // ✅ Serve statique des images (uploads)
+  const httpServer = createServer(expressApp);
+
+  const io = new Server(httpServer, {
+    cors: {
+      origin: 'http://localhost:5173',
+      credentials: true,
+    },
+  });
+
+  io.on('connection', (socket) => {
+    console.log('✅ WebSocket connected');
+  });
+
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  });
+
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
 
-  // ✅ Validation globale (DTOs)
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
-
-  // ✅ Filtre global pour les exceptions
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // ✅ Configuration Swagger
   const config = new DocumentBuilder()
     .setTitle('Trafine API')
     .setDescription('API de navigation en temps réel')
     .setVersion('1.0')
-    .addBearerAuth() // 🔐 pour support JWT dans Swagger
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document); // 📍 http://localhost:3000/api
+  SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
+  const incidentService = app.get(IncidentsService);
+  incidentService.setSocketInstance(io);
+
+  await app.init(); // ✅ initialize Nest
+  await httpServer.listen(3000);
+  console.log('🚀 Server running at http://localhost:3000');
 }
 bootstrap();

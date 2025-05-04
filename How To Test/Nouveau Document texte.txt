@@ -1,5 +1,5 @@
 #########################################
-# 🔐 AUTHENTIFICATION
+# 🔐 AUTHENTICATION
 #########################################
 
 ### Register
@@ -40,66 +40,130 @@ POST http://localhost:3000/auth/reset-password
 Content-Type: application/json
 
 {
-  "token": "<reset_token_received_via_email>",
-  "newPassword": "newStrongPassword123"
+  "token": "<reset_token>",
+  "newPassword": "newPassword123"
 }
 
 ###
 
-### Get profile
+### Get Profile
 GET http://localhost:3000/auth/me
-Authorization: Bearer <your_token>
+Authorization: Bearer <token>
 
 ###
 
 ### Logout
 POST http://localhost:3000/auth/logout
-Authorization: Bearer <your_token>
+Authorization: Bearer <token>
 
 #########################################
-# 📊 STATISTIQUES
+# 👤 USER PROFILE
 #########################################
 
-### Incidents stats
-GET http://localhost:3000/stats/incidents
-Authorization: Bearer <your_token>
+### Update User Info
+PATCH http://localhost:3000/users/me
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "email": "new@example.com",
+  "password": "newPassword123"
+}
+
+###
+
+### Upload Profile Image
+PATCH http://localhost:3000/users/me/profile-image
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+# Form-data field:
+# - file: (image file)
+
+###
+
+### Delete Own Account
+DELETE http://localhost:3000/users/me
+Authorization: Bearer <token>
 
 #########################################
 # 🚨 INCIDENTS
 #########################################
 
-### Create incident
+### Create Incident
 POST http://localhost:3000/incidents
-Authorization: Bearer <your_token>
+Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
 # Form-data fields:
-# - title: Test Incident
-# - description: Ceci est un test enrichi
+# - title: Accident Example
+# - description: A major accident on the road
 # - type: accident
-# - location: {"type":"Point","coordinates":[3.876716,43.610769]}
-# - severity: high      (optionnel)
-# - status: pending     (optionnel)
-# - source: user        (optionnel)
+# - location: { "type": "Point", "coordinates": [3.876716, 43.610769] }
+# - severity: high
+# - status: pending
+# - source: user
 # - image: (image file)
 
 ###
 
-### Validate incident
-POST http://localhost:3000/incidents/:id/validate
-Authorization: Bearer <your_token>
+### Validate Incident
+POST http://localhost:3000/incidents/<incident_id>/validate
+Authorization: Bearer <token>
 
 ###
 
-### Invalidate incident
-POST http://localhost:3000/incidents/:id/invalidate
-Authorization: Bearer <your_token>
+### Invalidate Incident
+POST http://localhost:3000/incidents/<incident_id>/invalidate
+Authorization: Bearer <token>
+
+###
+
+### Delete Own Incident
+DELETE http://localhost:3000/incidents/user/<incident_id>
+Authorization: Bearer <token>
+
+###
+
+### Get Nearby Incidents
+GET http://localhost:3000/incidents/nearby?lat=43.610769&lng=3.876716
+
+#########################################
+# 🔔 NOTIFICATIONS
+#########################################
+
+### Create Notification
+POST http://localhost:3000/notifications
+Content-Type: application/json
+
+{
+  "userId": "<user_id>",
+  "message": "🚨 New alert detected"
+}
+
+###
+
+### Get Notifications for a User
+GET http://localhost:3000/notifications/<user_id>
+
+###
+
+### Mark Notification as Read
+POST http://localhost:3000/notifications/<notification_id>/read
+
+#########################################
+# 📊 STATISTICS
+#########################################
+
+### Incident Stats
+GET http://localhost:3000/stats/incidents
+Authorization: Bearer <token>
 
 #########################################
 # 🧭 ROUTES
 #########################################
 
-### Calculate route
+### Calculate Route
 POST http://localhost:3000/routes/calculate
 Content-Type: application/json
 
@@ -111,12 +175,12 @@ Content-Type: application/json
 
 ###
 
-### Recalculate route
+### Recalculate Route
 POST http://localhost:3000/routes/recalculate
 Content-Type: application/json
 
 {
-  "start": { "lat": 43.610769, "lng": 3.876716 },
-  "end": { "lat": 43.296482, "lng": 5.36978 },
-  "incident": { "lat": 43.5, "lng": 4.5 }
+  "start": { "lat": 45.7485, "lng": 4.8467 },
+  "end": { "lat": 45.6962, "lng": 4.9406 },
+  "incident": { "lat": 45.72, "lng": 4.88 }
 }

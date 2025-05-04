@@ -8,6 +8,7 @@ import { IncidentsModule } from './incidents/incidents.module';
 import { StatsModule } from './stats/stats.module';
 import { PredictionsModule } from './predictions/predictions.module';
 import { RoutesModule } from './routes/routes.module';
+import { NotificationsModule } from './notifications/notifications.module'; // ✅ Add this line
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RoutesModule } from './routes/routes.module';
     StatsModule,
     PredictionsModule,
     RoutesModule,
+    NotificationsModule, // ✅ Fix: Now your /notifications routes will work
   ],
 })
 export class AppModule {}

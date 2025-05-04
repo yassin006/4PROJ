@@ -14,7 +14,9 @@ export class RoutesController {
   }
 
   @Post('recalculate')
-  async recalculateRoute(@Body() recalculateRouteDto: RecalculateRouteDto) {
-    return this.routesService.recalculateRoute(recalculateRouteDto);
+  recalculateRoute(@Body() recalculateRouteDto: RecalculateRouteDto) {
+    const { start, end, incident } = recalculateRouteDto;
+    return this.routesService.recalculateRoute(start, end, incident);
   }
+  
 }
