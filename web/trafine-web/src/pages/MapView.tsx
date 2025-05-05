@@ -18,7 +18,31 @@ import { recalculateRoute } from "../api/RouteService";
 import polyline from "@mapbox/polyline"; 
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import navLogo from "../assets/logoo1.png";
+import userPin from "../assets/broche-de-localisation.png";
+import destinationPin from "../assets/epingle.png";
+import incidentPin from "../assets/incident.png";
 
+const userIcon = new L.Icon({
+  iconUrl: userPin,
+  iconSize: [38, 38],
+  iconAnchor: [19, 38],
+  popupAnchor: [0, -32],
+});
+
+const destinationIcon = new L.Icon({
+  iconUrl: destinationPin,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -35],
+});
+
+const incidentIcon = new L.Icon({
+  iconUrl: incidentPin,
+  iconSize: [34, 34],
+  iconAnchor: [17, 34],
+  popupAnchor: [0, -30],
+});
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -30,16 +54,8 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-const redIcon = new L.Icon({
-  iconUrl:
-    "https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
+const redIcon = destinationIcon;
+
 
 const defaultPosition: [number, number] = [48.8566, 2.3522];
 
@@ -189,12 +205,18 @@ const MapView = () => {
         incident
       );
   
+      console.log("🧪 Données brutes recalculate :", response);
+  
       let newRoute: [number, number][] = [];
   
-      if (typeof response.geometry === "string") {
+      // ✅ Cas 1 : une chaîne encodée (polyline)
+      if (typeof response.geometry === "string" && response.geometry.length > 0) {
         const decoded = polyline.decode(response.geometry);
         newRoute = decoded.map(([lat, lng]) => [lat, lng]);
-      } else if (
+      }
+  
+      // ✅ Cas 2 : un tableau direct (newRoute)
+      else if (
         Array.isArray(response.newRoute) &&
         response.newRoute.every(
           (p: any) =>
@@ -206,12 +228,12 @@ const MapView = () => {
         newRoute = response.newRoute as [number, number][];
       }
   
+      // ✅ Mise à jour uniquement si la route est valide
       if (newRoute.length > 1) {
         setRouteCoords(newRoute);
         toast.success(response.message || "🔁 Itinéraire recalculé !");
       } else {
-        console.error("⚠️ Route reçue mais invalide :", response);
-        toast.error("Itinéraire vide ou invalide reçu.");
+        toast.error("Le tracé détaillé n'est pas disponible.");
       }
     } catch (error) {
       console.error("Erreur lors du recalcul:", error);
@@ -220,14 +242,33 @@ const MapView = () => {
   };
   
   
+  
   const { user } = useAuth(); 
 
-  
 
   return (
-    
     <div className="relative h-screen">
-      <MapContainer center={position} zoom={13} className="h-full w-full z-0">
+      
+<nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-white/80 to-blue-100/80 backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3 rounded-b-lg">
+  <div className="flex items-center gap-3">
+    <img src={navLogo} alt="logo" className="h-9 w-auto" />
+  </div>
+  <div className="flex items-center gap-4 text-sm">
+    <Link to="/" className="text-gray-700 font-medium hover:text-blue-600 transition">🗺️ Carte</Link>
+    <Link to="/profile" className="text-gray-700 font-medium hover:text-blue-600 transition">👤 Profil</Link>
+    <button
+      onClick={() => {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }}
+      className="bg-blue-600 text-white px-4 py-1.5 rounded-full shadow hover:bg-blue-700 transition"
+    >
+      🚪 Déconnexion
+    </button>
+  </div>
+</nav>
+
+      <MapContainer center={position} zoom={13} className="h-full w-full z-0 pt-14">
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
@@ -237,12 +278,13 @@ const MapView = () => {
           <FitBounds coords={routeCoords} />
         )}
 
-        <Marker position={position}>
+<Marker position={position} icon={userIcon}>
+
           <Popup>📍 Vous êtes ici</Popup>
         </Marker>
 
         {incidents.map((incident) => (
-          <Marker
+          <Marker icon={incidentIcon}
             key={incident._id}
             position={[
               incident.location.coordinates[1],
@@ -379,7 +421,7 @@ const MapView = () => {
 
         {routeCoords.length > 0 && (
           <>
-            <Polyline positions={routeCoords} color="blue" weight={5} />
+            <Polyline positions={routeCoords} color="blue" weight={6} />
             <Marker
               position={routeCoords[routeCoords.length - 1]}
               icon={redIcon}

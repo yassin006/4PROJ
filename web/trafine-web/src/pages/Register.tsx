@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import logo from "../assets/phones.png";
+import logo from "../assets/logoo12.png"; // ← nouvelle image
 import bgImg from "../assets/road-2.jpg";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -104,7 +104,6 @@ const Register = () => {
           </button>
         </form>
 
-        {/* ✅ Pink link below the form */}
         <div className="text-center mt-4">
           <Link to="/login" className="text-pink-600 hover:underline text-sm">
             Vous avez déjà un compte ? Connectez-vous

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../api/axios";
-import logo from "../assets/Untitled-2.png";
+import logo from "../assets/logoo.png"; // nouveau logo
 import bgImg from "../assets/road-2.jpg";
 
 const Login = () => {
@@ -51,14 +51,14 @@ const Login = () => {
           const token = new URLSearchParams(new URL(url).search).get("access_token");
           if (token) {
             localStorage.setItem("token", token);
-            login(); // appelle ton AuthContext si nécessaire
+            login();
             navigate("/");
             popup.close();
             clearInterval(timer);
           }
         }
       } catch (e) {
-        // CORS: continue until redirect completes
+        // CORS
       }
     }, 500);
   };
@@ -69,11 +69,9 @@ const Login = () => {
       style={{ backgroundImage: `url(${bgImg})` }}
     >
       <div className="w-full max-w-md bg-white bg-opacity-90 shadow-xl rounded-xl p-8 backdrop-blur">
-        <div className="flex justify-center mb-6">
-          <img src={logo} alt="Logo" className="h-20" />
+        <div className="flex justify-center mb-10">
+          <img src={logo} alt="Logo" className="h-16" />
         </div>
-
-        <h2 className="text-2xl font-bold mb-4 text-center text-gray-800"></h2>
 
         {error && (
           <div className="mb-4 text-red-600 bg-red-100 border border-red-300 px-4 py-2 rounded">
@@ -121,7 +119,6 @@ const Login = () => {
         </form>
 
         <div className="mt-4 flex gap-2">
-          {/* Connexion Google */}
           <button
             type="button"
             onClick={handleGoogleLogin}
@@ -134,7 +131,6 @@ const Login = () => {
             />
           </button>
 
-          {/* Lien vers inscription */}
           <button
             onClick={() => navigate("/register")}
             className="flex-1 bg-gray-200 text-gray-800 font-semibold py-2 rounded-lg hover:bg-pink-100 transition"
