@@ -1,8 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema({ timestamps: true }) // active createdAt et updatedAt
+export type IncidentDocument = Incident & Document;
+
+@Schema({ timestamps: true })
 export class Incident {
+  _id?: string; // ✅ Fix for TypeScript "_id does not exist" error
+
   @Prop({ required: true })
   title: string;
 
@@ -12,10 +16,14 @@ export class Incident {
   @Prop({ required: true })
   type: string;
 
+  @Prop({ required: true })
+  severity: string;
+
   @Prop({
     type: {
       type: String,
       enum: ['Point'],
+      default: 'Point',
       required: true,
     },
     coordinates: {
@@ -23,7 +31,10 @@ export class Incident {
       required: true,
     },
   })
-  location: { type: string; coordinates: number[] };
+  location: {
+    type: string;
+    coordinates: [number, number];
+  };
 
   @Prop({ required: true })
   createdBy: string;
@@ -34,24 +45,32 @@ export class Incident {
   @Prop({ default: 0 })
   invalidations: number;
 
+  @Prop({ default: 0 })
+  validationScore: number;
+
+  @Prop({ default: 'pending' })
+  status: string;
+
   @Prop()
   image: string;
 
-  @Prop({ default: 'pending', enum: ['pending', 'validated', 'invalidated'] })
-  status: string;
-
-  @Prop({ enum: ['low', 'moderate', 'high'], default: 'moderate' })
-  severity: string;
-
   @Prop({ default: 'user' })
   source: string;
+
+  @Prop()
+  createdAt?: Date;
+
+  @Prop()
+  updatedAt?: Date;
+
+  @Prop({ type: [String], default: [] })
+  validatedBy: string[];
+
+  @Prop({ type: [String], default: [] })
+  invalidatedBy: string[];
 }
 
-export type IncidentDocument = Incident &
-  Document & {
-    createdAt: Date;
-    updatedAt?: Date; // facultatif mais utile
-  };
-
 export const IncidentSchema = SchemaFactory.createForClass(Incident);
-IncidentSchema.index({ location: '2dsphere' }); // pour recherche géospatiale
+
+// ✅ Enable geospatial queries
+IncidentSchema.index({ location: '2dsphere' });

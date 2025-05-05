@@ -14,12 +14,13 @@ const IncidentForm: React.FC<Props> = ({ lat, lng, onClose }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("accident");
+  const [severity, setSeverity] = useState("moderate");
   const [image, setImage] = useState<File | null>(null);
   const [position, setPosition] = useState<[number, number]>([lat, lng]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Leaflet icon fix
+  // Fix for Leaflet marker icons
   delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl:
@@ -49,6 +50,7 @@ const IncidentForm: React.FC<Props> = ({ lat, lng, onClose }) => {
       formData.append("title", title);
       formData.append("description", description);
       formData.append("type", type);
+      formData.append("severity", severity);
       formData.append("status", "pending");
       formData.append(
         "location",
@@ -57,14 +59,16 @@ const IncidentForm: React.FC<Props> = ({ lat, lng, onClose }) => {
           coordinates: [position[1], position[0]],
         })
       );
-      if (image) formData.append("image", image);
+      if (image) {
+        formData.append("image", image);
+      }
 
       await api.post("/incidents", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Erreur signalement:", err);
       setError("Échec de l'envoi. Veuillez réessayer.");
     } finally {
@@ -122,13 +126,22 @@ const IncidentForm: React.FC<Props> = ({ lat, lng, onClose }) => {
             <option value="obstacle">Obstacle</option>
           </select>
 
+          <select
+            className="w-full border px-3 py-2 rounded"
+            value={severity}
+            onChange={(e) => setSeverity(e.target.value)}
+          >
+            <option value="minor">Mineur</option>
+            <option value="moderate">Modéré</option>
+            <option value="severe">Sévère</option>
+          </select>
+
           <input
             type="file"
             accept="image/*"
             onChange={(e) => setImage(e.target.files?.[0] ?? null)}
           />
 
-          {/* Carte interactive pour choisir la position */}
           <div className="h-52">
             <MapContainer
               center={position}

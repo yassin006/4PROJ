@@ -67,6 +67,7 @@ type Incident = {
   type: string;
   status: string;
   image?: string;
+  createdBy: string;
   location: {
     coordinates: [number, number];
   };
@@ -248,19 +249,131 @@ const MapView = () => {
               incident.location.coordinates[0],
             ]}
           >
-            <Popup>
-              <strong>{incident.type}</strong>
-              <br />
-              Statut : {incident.status}
-              <br />
-              {incident.image && (
-                <img
-                  src={`http://localhost:3000/uploads/incidents/${incident.image}`}
-                  alt="incident"
-                  className="mt-2 w-28 h-auto rounded"
-                />
-              )}
-            </Popup>
+   <Popup>
+  <div className="text-sm">
+    <strong>{incident.type}</strong>
+    <br />
+    Statut :{" "}
+    <span
+      className={`font-bold ${
+        incident.status === "validated"
+          ? "text-green-600"
+          : "text-yellow-600"
+      }`}
+    >
+      {incident.status}
+    </span>
+    {incident.image && (
+      <img
+        src={`http://localhost:3000/uploads/incidents/${incident.image}`}
+        alt="incident"
+        className="mt-2 w-28 h-auto rounded"
+      />
+    )}
+
+    {user?.userId === incident.createdBy ? (
+      <div className="flex justify-center mt-2">
+        <button
+          className="bg-red-600 text-white px-2 py-1 rounded text-xs"
+          onClick={async () => {
+            try {
+              const res = await fetch(
+                `http://localhost:3000/incidents/user/${incident._id}`,
+                {
+                  method: "DELETE",
+                  headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                  },
+                }
+              );
+              if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || "Erreur de suppression");
+              }
+              toast.success("🗑️ Incident supprimé !");
+              fetchIncidents(position);
+            } catch (err: any) {
+              toast.error(`Erreur lors de la suppression : ${err.message}`);
+            }
+          }}
+        >
+          🗑️ Supprimer
+        </button>
+      </div>
+    ) : (
+      incident.status !== "validated" && (
+        <div className="flex justify-between mt-2">
+          <button
+            className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+            onClick={async () => {
+              try {
+                const res = await fetch(
+                  `http://localhost:3000/incidents/${incident._id}/validate`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                  }
+                );
+                if (!res.ok) {
+                  const error = await res.json();
+                  throw new Error(error.message || "Erreur de validation");
+                }
+                toast.success("✅ Incident validé !");
+                fetchIncidents(position);
+              } catch (err: any) {
+                const msg = err.message;
+                if (msg.includes("déjà voté") || msg.includes("already voted")) {
+                  toast.error("⚠️ Vous avez déjà voté pour cet incident.");
+                } else {
+                  toast.error(`❌ Erreur : ${msg}`);
+                }
+              }
+            }}
+          >
+            ✔ Val
+          </button>
+
+          <button
+            className="bg-red-600 text-white px-2 py-1 rounded text-xs"
+            onClick={async () => {
+              try {
+                const res = await fetch(
+                  `http://localhost:3000/incidents/${incident._id}/invalidate`,
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                  }
+                );
+                if (!res.ok) {
+                  const error = await res.json();
+                  throw new Error(error.message || "Erreur d'invalidation");
+                }
+                toast.success("❌ Incident invalidé !");
+                fetchIncidents(position);
+              } catch (err: any) {
+                const msg = err.message;
+                if (msg.includes("déjà voté") || msg.includes("already voted")) {
+                  toast.error("⚠️ Vous avez déjà voté pour cet incident.");
+                } else {
+                  toast.error(`❌ Erreur : ${msg}`);
+                }
+              }
+            }}
+          >
+            ❌ Inval
+          </button>
+        </div>
+      )
+    )}
+  </div>
+</Popup>
+
+
+
           </Marker>
         ))}
 

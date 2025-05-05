@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Notification, NotificationDocument } from '../notifications/notification.schema';
+import {
+  Notification,
+  NotificationDocument,
+} from './notification.schema';
+import { CreateNotificationDto } from './dto/create-notification.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -10,15 +14,25 @@ export class NotificationsService {
     private readonly notificationModel: Model<NotificationDocument>,
   ) {}
 
-  async create(userId: string, message: string) {
-    return this.notificationModel.create({ userId, message });
+  async create(dto: CreateNotificationDto): Promise<Notification> {
+    const notification = new this.notificationModel(dto);
+    return notification.save();
   }
 
-  async findByUser(userId: string) {
-    return this.notificationModel.find({ userId }).sort({ createdAt: -1 }).exec();
+  async findByUser(userId: string): Promise<Notification[]> {
+    return this.notificationModel.find({ userId }).sort({ createdAt: -1 });
   }
 
-  async markAsRead(id: string) {
-    return this.notificationModel.findByIdAndUpdate(id, { read: true }, { new: true });
+  async markAsRead(id: string): Promise<Notification | null> {
+    return this.notificationModel.findByIdAndUpdate(
+      id,
+      { read: true },
+      { new: true },
+    );
+  }
+
+  // ✅ Retourner toutes les notifications (non filtrées)
+  async findAll(): Promise<Notification[]> {
+    return this.notificationModel.find().sort({ createdAt: -1 }).exec();
   }
 }

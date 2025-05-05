@@ -1,13 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { getProfile, updateProfile, uploadProfileImage, deleteAccount } from "../api/UserService";
+import {
+  getProfile,
+  updateProfile,
+  uploadProfileImage,
+  deleteAccount,
+  getUserNotifications,
+} from "../api/UserService";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
+
+type Notification = {
+  _id: string;
+  message: string;
+  location?: {
+    coordinates: [number, number];
+  };
+  createdAt: string;
+  read: boolean;
+};
 
 const Profile = () => {
   const { logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -16,6 +33,8 @@ const Profile = () => {
         const data = await getProfile();
         setEmail(data.email);
         setProfileImage(data.profileImage);
+        const notifs = await getUserNotifications();
+        setNotifications(notifs);
       } catch (err) {
         toast.error("Erreur lors du chargement du profil");
       }
@@ -30,7 +49,7 @@ const Profile = () => {
       if (password && password.length >= 6) {
         payload.password = password;
       }
-  
+
       await updateProfile(payload);
       toast.success("✅ Profil mis à jour !");
       setPassword("");
@@ -44,7 +63,6 @@ const Profile = () => {
       setLoading(false);
     }
   };
-  
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,6 +141,23 @@ const Profile = () => {
       >
         ❌ Supprimer mon compte
       </button>
+
+      {/* ✅ Notifications */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-2">📍 Notifications proches</h3>
+        {notifications.length === 0 ? (
+          <p className="text-gray-500">Aucune notification pour le moment.</p>
+        ) : (
+          <ul className="space-y-2">
+            {notifications.map((notif) => (
+              <li key={notif._id} className="border p-3 rounded bg-yellow-50">
+                <p>{notif.message}</p>
+                <small className="text-gray-500">{new Date(notif.createdAt).toLocaleString()}</small>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };

@@ -58,16 +58,36 @@ export class IncidentsController {
         ? JSON.parse(body.location)
         : body.location;
 
-    return this.incidentsService.create(
+    const incident = await this.incidentsService.create(
       {
         title: body.title,
         description: body.description,
         type: body.type,
+        severity: body.severity,
         location: parsedLocation,
       },
       userId,
       imageFilename,
     );
+
+    // ✅ Return shaped response including _id
+    return {
+      _id: incident._id,
+      title: incident.title,
+      description: incident.description,
+      type: incident.type,
+      severity: incident.severity,
+      location: incident.location,
+      createdBy: incident.createdBy,
+      validations: incident.validations,
+      invalidations: incident.invalidations,
+      validationScore: incident.validationScore,
+      status: incident.status,
+      image: incident.image,
+      source: incident.source,
+      createdAt: incident.createdAt,
+      updatedAt: incident.updatedAt,
+    };
   }
 
   // ✅ Get all incidents (admin only)
@@ -78,13 +98,24 @@ export class IncidentsController {
     return this.incidentsService.findAll();
   }
 
-  // ✅ Validate incident (admin only)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  // ✅ Validate incident (all users)
   @Post(':id/validate')
-  async validate(@Param('id') id: string) {
-    return this.incidentsService.validateIncident(id);
+  @UseGuards(JwtAuthGuard)
+  async validate(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req as any).user?.userId;
+    const role = (req as any).user?.role;
+    return this.incidentsService.validateIncident(id, userId, role);
   }
+  
+  @Post(':id/invalidate')
+  @UseGuards(JwtAuthGuard)
+  async invalidate(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req as any).user?.userId;
+    const role = (req as any).user?.role;
+    return this.incidentsService.invalidateIncident(id, userId, role);
+  }
+  
+  
 
   // ✅ Find nearby incidents
   @UseGuards(JwtAuthGuard)

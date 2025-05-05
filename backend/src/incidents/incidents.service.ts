@@ -1,20 +1,26 @@
-import { Injectable, NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Incident, IncidentDocument } from './entities/incident.schema';
 import { TrafficMonitorService } from '../traffic-monitor/traffic-monitor.service';
 import { Server } from 'socket.io';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class IncidentsService {
   private io: Server;
 
   constructor(
-    @InjectModel(Incident.name) private readonly incidentModel: Model<IncidentDocument>,
+    @InjectModel(Incident.name)
+    private readonly incidentModel: Model<IncidentDocument>,
     private readonly trafficMonitorService: TrafficMonitorService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
-  // ✅ Setter pour socket.io
   setSocketInstance(io: Server) {
     this.io = io;
   }
@@ -24,11 +30,17 @@ export class IncidentsService {
       ...dto,
       createdBy: userId,
       image: imageFilename,
+      validations: 0,
+      invalidations: 0,
+      validationScore: 0,
+      status: 'pending',
+      source: 'user',
+      validatedBy: [],
+      invalidatedBy: [],
     });
 
     await incident.save();
 
-    // ✅ Émission socket
     this.io?.emit('incident:new', {
       _id: incident._id,
       title: incident.title,
@@ -44,28 +56,65 @@ export class IncidentsService {
       trafficConditions: 'Traffic affected by incident',
     });
 
+    try {
+      const coordinates = incident.location?.coordinates;
+      if (coordinates) {
+        await this.notificationsService.create({
+          userId,
+          message: `New incident reported: ${incident.title}`,
+          location: { type: 'Point', coordinates },
+        });
+      }
+    } catch (error) {
+      console.error('❌ Failed to create notification:', error.message);
+    }
+
     return incident;
   }
 
-  async validateIncident(id: string): Promise<Incident> {
+  async validateIncident(id: string, userId: string, role: string): Promise<Incident> {
     const incident = await this.incidentModel.findById(id);
     if (!incident) throw new NotFoundException('Incident not found');
-  
-    // ⚠️ Vérifier que createdBy est présent
-    if (!incident.createdBy) {
-      throw new BadRequestException('Cannot validate incident: missing createdBy');
+
+    if (role !== 'admin' && incident.validatedBy.includes(userId)) {
+      throw new UnauthorizedException('User has already validated this incident');
     }
-  
-    incident.validations += 1;
+
+    incident.validationScore++;
+    incident.validations++;
+
+    if (role !== 'admin') {
+      incident.validatedBy.push(userId);
+    }
+
+    if (incident.validationScore >= 3) {
+      incident.status = 'validated';
+    }
+
     await incident.save();
     return incident;
   }
-  
 
-  async invalidateIncident(id: string): Promise<Incident> {
+  async invalidateIncident(id: string, userId: string, role: string): Promise<Incident> {
     const incident = await this.incidentModel.findById(id);
     if (!incident) throw new NotFoundException('Incident not found');
-    incident.invalidations += 1;
+
+    if (role !== 'admin' && incident.invalidatedBy.includes(userId)) {
+      throw new UnauthorizedException('User has already invalidated this incident');
+    }
+
+    incident.validationScore--;
+    incident.invalidations++;
+
+    if (role !== 'admin') {
+      incident.invalidatedBy.push(userId);
+    }
+
+    if (incident.validationScore <= -3) {
+      await incident.deleteOne();
+      throw new NotFoundException('Incident deleted due to excessive invalidations');
+    }
+
     await incident.save();
     return incident;
   }
@@ -99,5 +148,4 @@ export class IncidentsService {
     }
     await this.incidentModel.findByIdAndDelete(incidentId);
   }
-  
 }

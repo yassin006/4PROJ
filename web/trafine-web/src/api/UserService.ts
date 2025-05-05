@@ -1,5 +1,5 @@
 // src/api/UserService.ts
-import axios from "./axios"; // <-- Utilise bien l'instance configurée
+import axios from "./axios";
 
 export const getProfile = async () => {
   const res = await axios.get("/auth/me");
@@ -13,16 +13,22 @@ export const updateProfile = async (data: { email?: string; password?: string })
 
 export const uploadProfileImage = async (file: File) => {
   const formData = new FormData();
-  formData.append("profileImage", file);   // ✅ nom attendu par le backend
+  formData.append("profileImage", file);
   const res = await axios.patch("/users/me/profile-image", formData, {
     headers: {
-      "Content-Type": "multipart/form-data", // ✅ obligatoire pour envoi de fichier
+      "Content-Type": "multipart/form-data",
     },
   });
-  return `http://localhost:3000/uploads/${res.data.profileImage}`; // retourne l'URL complète
+  return `http://localhost:3000/uploads/${res.data.profileImage}`;
 };
 
 export const deleteAccount = async () => {
   const res = await axios.delete("/users/me");
+  return res.data;
+};
+
+// ✅ NOUVELLE FONCTION : récupérer les notifications
+export const getUserNotifications = async () => {
+  const res = await axios.get("/notifications");
   return res.data;
 };
