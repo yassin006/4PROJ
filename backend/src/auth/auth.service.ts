@@ -58,7 +58,7 @@ export class AuthService {
       email: user.email,
       sub: user._id,
       role: user.role,
-      profileImage: user.profileImage || null, // ✅ inclus dans le JWT
+      profileImage: user.profileImage || null,
     };
     const access_token = this.jwtService.sign(payload, { expiresIn: '1h' });
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
@@ -127,7 +127,7 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('User not found');
 
     const token = uuidv4();
-    const expiration = new Date(Date.now() + 1000 * 60 * 10); // 10 minutes
+    const expiration = new Date(Date.now() + 1000 * 60 * 10); 
 
     await this.usersService.setResetToken(email, token, expiration);
 

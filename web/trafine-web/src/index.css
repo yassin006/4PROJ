@@ -3,7 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === Global layout === */
 body {
   @apply bg-white text-gray-900 antialiased;
   margin: 0;
@@ -19,7 +18,6 @@ button {
   @apply px-4 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition;
 }
 
-/* === Leaflet popup visibility fix === */
 .leaflet-popup-content-wrapper {
   background: white !important;
   color: black !important;
@@ -43,7 +41,6 @@ button {
   text-decoration: underline;
 }
 
-/* ✅ React Hot Toast visibility fix */
 .__react-toast, 
 [data-sonner-toast] {
   z-index: 9999 !important;

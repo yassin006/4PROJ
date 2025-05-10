@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import logo from "../assets/logoo12.png"; // ← nouvelle image
+import logo from "../assets/logoo12.png";
 import bgImg from "../assets/road-2.jpg";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";

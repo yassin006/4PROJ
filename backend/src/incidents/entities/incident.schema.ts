@@ -5,7 +5,7 @@ export type IncidentDocument = Incident & Document;
 
 @Schema({ timestamps: true })
 export class Incident {
-  _id?: string; // ✅ Fix for TypeScript "_id does not exist" error
+  _id?: string; 
 
   @Prop({ required: true })
   title: string;
@@ -72,5 +72,4 @@ export class Incident {
 
 export const IncidentSchema = SchemaFactory.createForClass(Incident);
 
-// ✅ Enable geospatial queries
 IncidentSchema.index({ location: '2dsphere' });

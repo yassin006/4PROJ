@@ -111,7 +111,6 @@ export class UsersService {
     return this.userModel.findByIdAndUpdate(id, dataToUpdate, { new: true });
   }
 
-  // ✅ AJOUT : pour l'upload de photo de profil
   async updateProfileImage(userId: string, filename: string): Promise<UserDocument | null> {
     return this.userModel.findByIdAndUpdate(
       userId,

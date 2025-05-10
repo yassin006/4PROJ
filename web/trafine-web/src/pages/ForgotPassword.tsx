@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import phonesImg from "../assets/logoo12.png"; // ← Nouveau logo
+import phonesImg from "../assets/logoo12.png";
 import bgImg from "../assets/road.jpg";
 import api from "../api/axios";
 
@@ -24,7 +24,6 @@ const ForgotPassword = () => {
       console.log("✅ Réponse backend :", res.data);
       setMessage(res.data?.message || "Email de réinitialisation envoyé.");
 
-      // ⏳ Redirection après 4 secondes
       setTimeout(() => {
         window.location.href = "http://localhost:5173/RESET-password";
       }, 4000);

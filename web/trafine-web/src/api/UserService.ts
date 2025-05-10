@@ -1,4 +1,3 @@
-// src/api/UserService.ts
 import axios from "./axios";
 
 export const getProfile = async () => {
@@ -27,7 +26,6 @@ export const deleteAccount = async () => {
   return res.data;
 };
 
-// ✅ NOUVELLE FONCTION : récupérer les notifications
 export const getUserNotifications = async () => {
   const res = await axios.get("/notifications");
   return res.data;

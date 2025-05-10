@@ -1,99 +1,104 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+🚀 ClearWay – Backend API (NestJS)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Ce répertoire contient l'API backend du projet ClearWay, une application de navigation en temps réel et participative. Cette API est construite avec le framework NestJS et connectée à une base de données MongoDB. Elle gère l’authentification (JWT et OAuth2), les incidents, les utilisateurs, les statistiques, les prédictions de trafic, les notifications et les itinéraires.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+🧩 Fonctionnalités principales
 
-## Description
+🔐 Authentification (JWT, OAuth2 Google)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+🧑‍🤝‍🧑 Gestion des utilisateurs (CRUD + rôles)
 
-## Project setup
+🚧 Signalement et modération d’incidents
 
-```bash
-$ npm install
-```
+📊 Statistiques en temps réel sur les incidents
 
-## Compile and run the project
+📍 Prédiction des zones de congestion
 
-```bash
-# development
-$ npm run start
+📬 Notifications push WebSocket (Socket.IO)
 
-# watch mode
-$ npm run start:dev
+🗺️ Recalcul d’itinéraire avec OpenRouteService
 
-# production mode
-$ npm run start:prod
-```
+🧪 Tests E2E avec Jest et Postman
 
-## Run tests
+📄 Documentation Swagger (http://localhost:3000/api)
 
-```bash
-# unit tests
-$ npm run test
+⚙️ Technologies utilisées
 
-# e2e tests
-$ npm run test:e2e
+Framework : NestJS (Node.js, TypeScript)
 
-# test coverage
-$ npm run test:cov
-```
+Base de données : MongoDB (via Mongoose)
 
-## Deployment
+WebSocket : Socket.IO
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+API externe : OpenRouteService (HEiGIT)
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Email : SMTP (Gmail)
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+Sécurité : JWT, Google OAuth2, validation class-validator
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Conteneurisation : Docker, Docker Compose
 
-## Resources
+📁 Structure simplifiée
 
-Check out a few resources that may come in handy when working with NestJS:
+backend/
+├── src/
+│   ├── auth/               # Authentification + Google OAuth2
+│   ├── users/              # Utilisateurs & rôles
+│   ├── incidents/          # Signalements + validation communautaire
+│   ├── stats/              # Statistiques incidents
+│   ├── predictions/        # Prédictions de trafic
+│   ├── routes/             # Itinéraires et recalcul
+│   ├── notifications/      # Notifications WebSocket
+│   ├── common/             # Filtres, middlewares
+│   ├── main.ts             # Point d’entrée + config Swagger & WebSocket
+│   └── app.module.ts       # Modules importés
+├── .env / .env.docker      # Variables d’environnement locales & docker
+├── Dockerfile              # Image backend
+└── README.md               # Ce fichier
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+⚙️ Installation locale
 
-## Support
+npm install
+npm run start:dev
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+API disponible sur : http://localhost:3000
 
-## Stay in touch
+🐳 Lancement avec Docker
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+docker build -t clearway-api .
+docker run -p 3000:3000 --env-file .env.docker clearway-api
 
-## License
+Ou via docker-compose à la racine du projet :
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+docker-compose up --build
 
+🔐 Sécurité et configuration
+
+Les variables d’environnement principales sont définies dans .env et .env.docker :
+
+JWT_SECRET=trafineSuperSecretKey2025
+MONGODB_URI_LOCAL=mongodb://localhost:27017/trafine_db
+MONGODB_URI_DOCKER=mongodb://mongo:27017/trafine_db
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+EMAIL_USER=...
+EMAIL_PASS=...
+
+Le fichier main.ts configure les pipes de validation, les filtres d’erreurs, CORS, Swagger, et initialise Socket.IO.
+
+🔍 Swagger
+
+Une documentation Swagger est disponible à :
+👉 http://localhost:3000/api
+
+🧪 Tests
+
+npm run test : tests unitaires
+
+npm run test:e2e : tests end-to-end
+
+Requêtes validées via Postman (auth, incidents, prédictions...)
+
+👤 Auteurs (backend)
+
+Yousfi Mohamed Yassine (développement principal, architecture, sécurité)

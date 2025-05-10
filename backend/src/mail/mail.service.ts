@@ -19,7 +19,6 @@ export class MailService {
   }
 
   async sendResetPasswordEmail(to: string, token: string) {
-    // ✅ Redirige vers la page front-end React
     const resetUrl = `http://localhost:5173/RESET-password?token=${token}`;
 
     await this.transporter.sendMail({

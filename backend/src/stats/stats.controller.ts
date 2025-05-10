@@ -12,7 +12,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}
 
-  @Roles('admin') // Seuls les admins peuvent accéder
+  @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('incidents')
   async getIncidentStats() {

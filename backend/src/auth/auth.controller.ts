@@ -1,4 +1,3 @@
-// src/auth/auth.controller.ts
 import {
   Body,
   Controller,
@@ -60,7 +59,7 @@ export class AuthController {
   @Post('logout')
   async logout(@Req() req: Request) {
     const user = req.user as any;
-    await this.authService.logout(user.userId); // ✅ utilise userId et non sub
+    await this.authService.logout(user.userId); 
     return { message: 'Logout successful' };
   }
 
@@ -79,16 +78,12 @@ export class AuthController {
     };
   }
   
-  
 
-  // 🌐 Redirection vers Google
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleAuth() {
-    // Juste une redirection automatique
   }
 
-  // 🌐 Callback Google avec redirection vers le frontend
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
   async googleRedirect(@Req() req: Request, @Res() res: Response) {

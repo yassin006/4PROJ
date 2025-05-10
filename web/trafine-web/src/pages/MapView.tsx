@@ -18,6 +18,7 @@ import { recalculateRoute } from "../api/RouteService";
 import polyline from "@mapbox/polyline"; 
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { Circle } from "react-leaflet";
 import navLogo from "../assets/logoo1.png";
 import userPin from "../assets/broche-de-localisation.png";
 import destinationPin from "../assets/epingle.png";
@@ -29,6 +30,7 @@ const userIcon = new L.Icon({
   iconAnchor: [19, 38],
   popupAnchor: [0, -32],
 });
+
 
 const destinationIcon = new L.Icon({
   iconUrl: destinationPin,
@@ -97,6 +99,10 @@ const MapView = () => {
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
   const [instructions, setInstructions] = useState<string[]>([]);
   const [currentStep, setCurrentStep] = useState<number>(0);
+  const [destinationDistance, setDestinationDistance] = useState<number | null>(null);
+    const [congestionZones, setCongestionZones] = useState<
+    { lat: number; lng: number; level: "high" | "medium" }[]
+  >([]);
 
   const fetchIncidents = async (coords: [number, number]) => {
     try {
@@ -115,6 +121,14 @@ const MapView = () => {
           pos.coords.longitude,
         ];
         setPosition(coords);
+if (routeCoords.length > 0) {
+  const [destLat, destLng] = routeCoords[routeCoords.length - 1];
+  const dist = getDistance(coords, [destLat, destLng]);
+  setDestinationDistance(dist);
+} else {
+  setDestinationDistance(null);
+}
+
         fetchIncidents(coords);
 
         if (
@@ -165,7 +179,9 @@ const MapView = () => {
       socket.off("incident:new", handleNewIncident);
     };
   }, []);
-
+useEffect(() => {
+  fetchCongestionData();
+}, []);
   function getDistance(
     [lat1, lng1]: [number, number],
     [lat2, lng2]: [number, number]
@@ -180,6 +196,28 @@ const MapView = () => {
       Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
+
+  const fetchCongestionData = async () => {
+  try {
+    const res = await fetch("http://localhost:3000/predictions/congestion", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    const data = await res.json();
+
+const zones = [
+  { lat: 45.757813, lng: 4.832011, level: "high" },
+  { lat: 45.764043, lng: 4.835659, level: "medium" },
+] as const;
+
+
+    setCongestionZones([...zones]);
+  } catch (err) {
+    console.error("❌ Failed to load congestion data:", err);
+  }
+};
+
 
   const handleRecalculate = async () => {
     try {
@@ -209,13 +247,11 @@ const MapView = () => {
   
       let newRoute: [number, number][] = [];
   
-      // ✅ Cas 1 : une chaîne encodée (polyline)
       if (typeof response.geometry === "string" && response.geometry.length > 0) {
         const decoded = polyline.decode(response.geometry);
         newRoute = decoded.map(([lat, lng]) => [lat, lng]);
       }
   
-      // ✅ Cas 2 : un tableau direct (newRoute)
       else if (
         Array.isArray(response.newRoute) &&
         response.newRoute.every(
@@ -228,7 +264,6 @@ const MapView = () => {
         newRoute = response.newRoute as [number, number][];
       }
   
-      // ✅ Mise à jour uniquement si la route est valide
       if (newRoute.length > 1) {
         setRouteCoords(newRoute);
         toast.success(response.message || "🔁 Itinéraire recalculé !");
@@ -249,26 +284,46 @@ const MapView = () => {
   return (
     <div className="relative h-screen">
       
-<nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-white/80 to-blue-100/80 backdrop-blur-md shadow-sm flex items-center justify-between px-6 py-3 rounded-b-lg">
-  <div className="flex items-center gap-3">
-    <img src={navLogo} alt="logo" className="h-9 w-auto" />
-  </div>
-  <div className="flex items-center gap-4 text-sm">
-    <Link to="/" className="text-gray-700 font-medium hover:text-blue-600 transition">🗺️ Carte</Link>
-    <Link to="/profile" className="text-gray-700 font-medium hover:text-blue-600 transition">👤 Profil</Link>
-    <button
-      onClick={() => {
-        localStorage.removeItem("token");
-        window.location.href = "/login";
-      }}
-      className="bg-blue-600 text-white px-4 py-1.5 rounded-full shadow hover:bg-blue-700 transition"
-    >
-      🚪 Déconnexion
-    </button>
+      <nav className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
+  <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+    
+    <div className="flex items-center gap-2">
+      <img src={navLogo} alt="logo" className="h-8 w-auto" />
+    </div>
+
+    <div className="flex items-center gap-8 ml-20 text-sm font-medium text-gray-700">
+    <Link
+  to="/"
+  className="text-gray-700 hover:text-purple-600 hover:underline-offset-2 hover:underline transition"
+>
+  Carte
+</Link>
+<Link
+  to="/profile"
+  className="text-gray-700 hover:text-purple-600 hover:underline-offset-2 hover:underline transition"
+>
+  Profil
+</Link>
+
+      <button
+        onClick={() => {
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+        }}
+        className="px-4 py-2 bg-purple-600 text-white rounded-full shadow hover:bg-purple-700 transition"
+      >
+        Déconnexion
+      </button>
+    </div>
   </div>
 </nav>
 
-      <MapContainer center={position} zoom={13} className="h-full w-full z-0 pt-14">
+
+
+
+
+
+      <MapContainer center={position} zoom={13} zoomControl={false}  className="h-full w-full z-0 pt-14">
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
@@ -282,6 +337,19 @@ const MapView = () => {
 
           <Popup>📍 Vous êtes ici</Popup>
         </Marker>
+{congestionZones.map((zone, index) => (
+  <Circle
+    key={index}
+    center={[zone.lat, zone.lng]}
+    radius={500}
+    pathOptions={{
+      color: zone.level === "high" ? "red" : "orange",
+      fillColor: zone.level === "high" ? "red" : "orange",
+      fillOpacity: 0.3,
+      weight: 1,
+    }}
+  />
+))}
 
         {incidents.map((incident) => (
           <Marker icon={incidentIcon}
@@ -429,6 +497,7 @@ const MapView = () => {
               <Popup>🏁 Destination</Popup>
             </Marker>
           </>
+          
         )}
       </MapContainer>
 
@@ -439,6 +508,16 @@ const MapView = () => {
           onClose={() => setShowForm(false)}
         />
       )}
+{destinationDistance !== null && (
+  <div className="fixed top-[70px] right-4 z-50 bg-white bg-opacity-90 backdrop-blur-sm border border-gray-200 shadow px-4 py-2 rounded-lg text-sm font-medium text-gray-800">
+    📍 Distance restante :{" "}
+    <span className="font-bold">
+      {destinationDistance > 1000
+        ? `${(destinationDistance / 1000).toFixed(2)} km`
+        : `${Math.round(destinationDistance)} m`}
+    </span>
+  </div>
+)}
 
       {showRouteForm && (
         <RouteForm
@@ -452,7 +531,6 @@ const MapView = () => {
         />
       )}
 
-      {/* 🟨 Yellow: Recalculer */}
       {routeCoords.length > 0 && (
         <button
           onClick={handleRecalculate}
@@ -463,7 +541,6 @@ const MapView = () => {
         </button>
       )}
 
-      {/* 🟩 Green: Itinéraire */}
       <button
         onClick={() => setShowRouteForm(true)}
         className="fixed bottom-[90px] right-6 z-50 bg-green-600 text-white rounded-full w-14 h-14 shadow-lg hover:bg-green-700 text-xl flex items-center justify-center"
@@ -472,7 +549,6 @@ const MapView = () => {
         🚗
       </button>
 
-      {/* 🔵 Blue: Signaler un incident */}
       <button
         onClick={() => setShowForm(true)}
         className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white rounded-full w-14 h-14 shadow-lg hover:bg-pink-600 text-3xl flex items-center justify-center"
@@ -481,7 +557,6 @@ const MapView = () => {
         +
       </button>
 
-      {/* 🟥 Red: Quitter la navigation */}
 {routeCoords.length > 0 && (
   <button
     onClick={() => {
@@ -499,11 +574,12 @@ const MapView = () => {
 
 {user?.role === "admin" && (
   <Link
-    to="/admin"
-    className="fixed bottom-6 left-6 z-50 bg-black text-white px-4 py-2 rounded shadow hover:bg-gray-800"
-  >
-    Dashboard
-  </Link>
+  to="/admin"
+  className="fixed bottom-6 left-6 z-50 bg-gradient-to-r from-amber-200 to-yellow-100 text-gray-800 px-5 py-2.5 rounded-full shadow-lg hover:from-amber-300 hover:to-yellow-200 transition-all duration-300 text-sm font-semibold flex items-center gap-2"
+>
+  Dashboard
+</Link>
+
 )}
 
 

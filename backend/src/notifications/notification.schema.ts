@@ -33,5 +33,4 @@ export class Notification {
 export type NotificationDocument = Notification & Document;
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
 
-// ✅ C’EST ESSENTIEL : ajouter l’index géospatial pour que Mongo comprenne le champ
 NotificationSchema.index({ location: '2dsphere' });

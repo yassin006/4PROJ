@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../api/axios";
-import bgImg from "../assets/road.jpg"; // ✅ Add the background image
+import bgImg from "../assets/road.jpg";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();

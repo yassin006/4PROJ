@@ -1,4 +1,3 @@
-// src/api/axios.ts
 import axios from "axios";
 
 const instance = axios.create({
@@ -6,7 +5,6 @@ const instance = axios.create({
   withCredentials: true,
 });
 
-// ✅ Ajout du token JWT à chaque requête
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -15,7 +13,6 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
-// ✅ Gestion des erreurs automatiques (debug + déconnexion)
 instance.interceptors.response.use(
   (response) => response,
   (error) => {

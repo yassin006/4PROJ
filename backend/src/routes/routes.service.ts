@@ -1,4 +1,3 @@
-// src/routes/routes.service.ts
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { TrafficMonitorService } from '../traffic-monitor/traffic-monitor.service';
@@ -76,12 +75,12 @@ export class RoutesService {
 
   async recalculateRoute(start: { lat: number; lng: number }, end: { lat: number; lng: number }, incident: { lat: number; lng: number }) {
     const apiKey = process.env.ORS_API_KEY;
-  
+
     const coordinates = [
       [start.lng, start.lat],
       [end.lng, end.lat],
     ];
-  
+
     const avoidPolygon = {
       type: 'Polygon',
       coordinates: [[
@@ -92,16 +91,17 @@ export class RoutesService {
         [incident.lng - 0.01, incident.lat - 0.01]
       ]]
     };
-  
+
     const body = {
       coordinates,
+      instructions: true,
       options: {
         avoid_polygons: avoidPolygon
       },
-      radiuses: [5000, 5000], 
+      radiuses: [5000, 5000],
       format: 'json'
     };
-  
+
     try {
       const response = await axios.post(
         'https://api.openrouteservice.org/v2/directions/driving-car',
@@ -113,26 +113,28 @@ export class RoutesService {
           },
         }
       );
-  
-      const geometry = response.data.routes[0].geometry;
+
+      const routeData = response.data.routes[0];
+      const geometry = routeData.geometry;
       const decoded = polyline.decode(geometry);
       const newRoute = decoded.map(([lat, lng]) => ({ lat, lng }));
-  
+      const instructions = routeData.segments[0]?.steps?.map((step: any) => step.instruction) || [];
+
       return {
         newRoute,
-        message: "Traffic detected, recalculated route to avoid congestion.",
+        instructions,
+        message: "Traffic detected, recalculated route to avoid congestion."
       };
-  
+
     } catch (error) {
-      console.error("🔥 ORS ERROR:", error.response?.data || error.message);
+      console.error("ORS ERROR:", error.response?.data || error.message);
       return {
         newRoute: [start, end],
-        message: "Fallback route used due to error.",
+        instructions: [],
+        message: "Fallback route used due to error."
       };
     }
   }
-  
-    
 
   private async avoidTraffic(start: any, end: any, trafficData: any) {
     const apiKey = process.env.ORS_API_KEY;
@@ -181,13 +183,15 @@ export class RoutesService {
 
       return {
         newRoute,
-        message: 'Traffic detected, recalculated route to avoid congestion.',
+        instructions: response.data.routes[0].segments[0]?.steps?.map((s: any) => s.instruction) || [],
+        message: 'Traffic detected, recalculated route to avoid congestion.'
       };
     } catch (err) {
       console.error("ORS avoidTraffic error", err.message);
       return {
         newRoute: [start, end],
-        message: 'Fallback route used. Error with ORS recalculation.',
+        instructions: [],
+        message: 'Fallback route used. Error with ORS recalculation.'
       };
     }
   }

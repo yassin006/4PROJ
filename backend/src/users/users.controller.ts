@@ -1,4 +1,3 @@
-// src/users/users.controller.ts
 import {
   Controller,
   Get,
@@ -28,7 +27,6 @@ import { extname } from 'path';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // 🔐 ADMIN ONLY
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get()
@@ -46,7 +44,6 @@ export class UsersController {
     return this.usersService.create(userData);
   }
 
-// ✅ Place ceci en premier
 @UseGuards(JwtAuthGuard)
 @Delete('me')
 async deleteOwnAccount(@Req() req: any): Promise<{ message: string }> {
@@ -55,7 +52,6 @@ async deleteOwnAccount(@Req() req: any): Promise<{ message: string }> {
   return { message: 'Your account has been deleted successfully' };
 }
 
-// ❌ Place celui-ci après
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
 @Delete(':id')
@@ -65,7 +61,6 @@ async delete(@Param('id') id: string): Promise<{ message: string }> {
 }
 
 
-  // 🔐 ADMIN ONLY – update user role
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch(':id/role')
@@ -77,7 +72,6 @@ async delete(@Param('id') id: string): Promise<{ message: string }> {
     return { message: `Role updated to "${role}" successfully` };
   }
 
-  // ✅ Update own user data
   @UseGuards(JwtAuthGuard)
   @Patch('me')
   async updateMe(
@@ -88,7 +82,6 @@ async delete(@Param('id') id: string): Promise<{ message: string }> {
     return this.usersService.updateUser(userId, updateUserDto);
   }
 
-  // ✅ Upload / Change profile image
   @UseGuards(JwtAuthGuard)
   @Patch('me/profile-image')
   @UseInterceptors(

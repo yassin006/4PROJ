@@ -13,10 +13,10 @@ class LocationDto {
   @IsNotEmpty()
   @IsString()
   @IsIn(['Point'])
-  type: string; // 'Point'
+  type: string; 
 
   @IsArray()
-  coordinates: number[]; // [lng, lat]
+  coordinates: number[]; 
 }
 
 export class CreateNotificationDto {

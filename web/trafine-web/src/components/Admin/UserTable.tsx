@@ -1,4 +1,3 @@
-// src/components/UserTable.tsx
 import React, { useEffect, useState } from "react";
 import { deleteUser, updateUserRole } from "../../api/AdminService";
 import axios from "../../api/axios";

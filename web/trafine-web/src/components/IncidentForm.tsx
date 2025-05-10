@@ -20,7 +20,6 @@ const IncidentForm: React.FC<Props> = ({ lat, lng, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fix for Leaflet marker icons
   delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl:

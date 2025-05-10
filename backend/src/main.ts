@@ -1,4 +1,3 @@
-// src/main.ts
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -8,7 +7,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
-import { ExpressAdapter } from '@nestjs/platform-express'; // ✅ à ajouter
+import { ExpressAdapter } from '@nestjs/platform-express'; 
 import * as express from 'express';
 import { IncidentsService } from './incidents/incidents.service';
 
@@ -16,7 +15,7 @@ async function bootstrap() {
   const expressApp = express();
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule,
-    new ExpressAdapter(expressApp), // ✅ fix important
+    new ExpressAdapter(expressApp), 
   );
 
   const httpServer = createServer(expressApp);
@@ -60,7 +59,7 @@ async function bootstrap() {
   const incidentService = app.get(IncidentsService);
   incidentService.setSocketInstance(io);
 
-  await app.init(); // ✅ initialize Nest
+  await app.init(); 
   await httpServer.listen(3000);
   console.log('🚀 Server running at http://localhost:3000');
 }

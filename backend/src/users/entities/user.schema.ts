@@ -39,7 +39,6 @@ export class User {
   @Prop({ type: Date, default: null })
   resetTokenExpiration?: Date | null;
 
-  // ✅ Ajout du champ pour la photo de profil
   @Prop({ type: String, default: null })
   profileImage?: string | null;
 }

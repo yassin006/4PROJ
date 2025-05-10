@@ -31,7 +31,6 @@ export class NotificationsService {
     );
   }
 
-  // ✅ Retourner toutes les notifications (non filtrées)
   async findAll(): Promise<Notification[]> {
     return this.notificationModel.find().sort({ createdAt: -1 }).exec();
   }

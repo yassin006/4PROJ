@@ -32,12 +32,11 @@ describe('Incidents Endpoints', () => {
     const createResponse = await request(app.getHttpServer())
       .post('/incidents')
       .set('Authorization', `Bearer ${jwtToken}`)
-      .send({
-        title: 'Accident on Route A',
-        description: 'Accident reported on Route A',
-        type: 'accident',
-        location: '{"type":"Point","coordinates":[3.876716,43.610769]}',
-      })
+      .field('title', 'Accident on Route A')
+      .field('description', 'Accident reported on Route A')
+      .field('type', 'accident')
+      .field('severity', 'moderate') 
+      .field('location', '{"type":"Point","coordinates":[3.876716,43.610769]}')
       .expect(201);
 
     expect(createResponse.body).toHaveProperty('_id');

@@ -1,4 +1,3 @@
-// src/components/IncidentTable.tsx
 import React, { useEffect, useState } from "react";
 import { validateIncident, deleteIncident } from "../../api/AdminService";
 import axios from "../../api/axios";

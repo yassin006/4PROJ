@@ -66,7 +66,7 @@ export class IncidentsService {
         });
       }
     } catch (error) {
-      console.error('❌ Failed to create notification:', error.message);
+      console.error('Failed to create notification:', error.message);
     }
 
     return incident;

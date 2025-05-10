@@ -1,4 +1,3 @@
-// src/api/RouteService.ts
 import api from "./axios";
 import polyline from "@mapbox/polyline";
 
@@ -30,10 +29,9 @@ export const recalculateRoute = async (
 
   const data = await response.json();
 
-  // ✅ Corriger ici pour produire un tableau de [number, number]
   if (typeof data.geometry === "string") {
     const decoded = polyline.decode(data.geometry);
-    data.newRoute = decoded.map(([lat, lng]) => [lat, lng]); // format explicite
+    data.newRoute = decoded.map(([lat, lng]) => [lat, lng]);
   } else if (Array.isArray(data.newRoute)) {
     data.newRoute = data.newRoute.map((p: any) => [p.lat, p.lng]);
   }

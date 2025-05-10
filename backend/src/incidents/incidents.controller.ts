@@ -27,7 +27,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}
 
-  // ✅ Create incident (authenticated users)
   @Post()
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
@@ -70,7 +69,6 @@ export class IncidentsController {
       imageFilename,
     );
 
-    // ✅ Return shaped response including _id
     return {
       _id: incident._id,
       title: incident.title,
@@ -90,7 +88,6 @@ export class IncidentsController {
     };
   }
 
-  // ✅ Get all incidents (admin only)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get()
@@ -98,7 +95,6 @@ export class IncidentsController {
     return this.incidentsService.findAll();
   }
 
-  // ✅ Validate incident (all users)
   @Post(':id/validate')
   @UseGuards(JwtAuthGuard)
   async validate(@Param('id') id: string, @Req() req: Request) {
@@ -114,10 +110,7 @@ export class IncidentsController {
     const role = (req as any).user?.role;
     return this.incidentsService.invalidateIncident(id, userId, role);
   }
-  
-  
 
-  // ✅ Find nearby incidents
   @UseGuards(JwtAuthGuard)
   @Get('nearby')
   async findNearbyIncidents(
@@ -129,7 +122,6 @@ export class IncidentsController {
     return this.incidentsService.findNearbyIncidents(latitude, longitude);
   }
 
-  // ✅ DELETE own incident
   @UseGuards(JwtAuthGuard)
   @Delete('user/:id')
   async deleteUserIncident(
@@ -141,7 +133,6 @@ export class IncidentsController {
     return { message: 'Incident deleted successfully.' };
   }
 
-  // ✅ DELETE any incident (admin only)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Delete(':id')

@@ -1,4 +1,3 @@
-// src/routes.tsx
 import { createBrowserRouter } from "react-router-dom";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
@@ -9,24 +8,24 @@ import ResetPassword from "../pages/ResetPassword";
 import GoogleCallback from "../pages/GoogleCallback";
 import MapView from "../pages/MapView";
 import PrivateRoute from "../components/PrivateRoute";
-import App from "../App"; // ✅ Layout global avec Navbar
+import App from "../App";
 import Profile from "../pages/Profile";
-import AdminDashboard from "../pages/AdminDashboard"; // 🛠️ À créer
+import AdminDashboard from "../pages/AdminDashboard"; 
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <PrivateRoute />, // 🔒 Route protégée par auth
+    element: <PrivateRoute />,
     children: [
       {
         path: "",
-        element: <App />, // 🧩 Layout avec Navbar
+        element: <App />, 
         children: [
           { path: "", element: <Home /> },
           { path: "dashboard", element: <div>Dashboard (à créer)</div> },
           { path: "map", element: <MapView /> },
           { path: "profile", element: <Profile /> },
-          { path: "admin", element: <AdminDashboard /> }, // 🔐 Admin uniquement
+          { path: "admin", element: <AdminDashboard /> },
         ],
       },
     ],

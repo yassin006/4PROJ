@@ -1,7 +1,5 @@
-// src/pages/Home.tsx
 import React from "react";
-import MapView from "./MapView"; // 🗺️ Assurez-vous que ce chemin est correct
-
+import MapView from "./MapView";
 const Home = () => {
   return <MapView />;
 };

@@ -6,7 +6,7 @@ interface Props {
   userPosition: { lat: number; lng: number };
   onClose: () => void;
   onRouteCalculated: (coords: [number, number][]) => void;
-  onInstructionsReceived: (instructions: string[]) => void; // ✅ NEW
+  onInstructionsReceived: (instructions: string[]) => void; 
 }
 
 const RouteForm: React.FC<Props> = ({
@@ -59,7 +59,7 @@ const RouteForm: React.FC<Props> = ({
 
       const leafletCoords: [number, number][] = polyline.decode(result.geometry);
       onRouteCalculated(leafletCoords);
-      onInstructionsReceived(result.instructions || []); // ✅ PASS INSTRUCTIONS
+      onInstructionsReceived(result.instructions || []);
       onClose();
     } catch (err) {
       console.error("💥 Erreur de calcul :", err);

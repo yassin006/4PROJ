@@ -1,4 +1,3 @@
-// src/routes/routes.controller.ts
 import { Controller, Post, Body } from '@nestjs/common';
 import { RoutesService } from './routes.service';
 import { CalculateRouteDto } from './dto/calculate-route.dto';
@@ -14,9 +13,13 @@ export class RoutesController {
   }
 
   @Post('recalculate')
-  recalculateRoute(@Body() recalculateRouteDto: RecalculateRouteDto) {
+  async recalculateRoute(@Body() recalculateRouteDto: RecalculateRouteDto) {
     const { start, end, incident } = recalculateRouteDto;
-    return this.routesService.recalculateRoute(start, end, incident);
+    const result = await this.routesService.recalculateRoute(start, end, incident);
+
+    return {
+      newRoute: result.newRoute ?? [],
+      instructions: result.instructions ?? [],
+    };
   }
-  
 }

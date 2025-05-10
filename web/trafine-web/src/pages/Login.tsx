@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../api/axios";
-import logo from "../assets/logoo.png"; // nouveau logo
+import logo from "../assets/logoo.png"; 
 import bgImg from "../assets/road-2.jpg";
 
 const Login = () => {

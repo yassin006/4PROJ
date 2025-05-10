@@ -1,5 +1,4 @@
-// src/api/AdminService.ts
-import axios from "./axios"; // ✅ bon chemin local
+import axios from "./axios";
 
 export const validateIncident = async (id: string) => {
   return axios.post(`/incidents/${id}/validate`);
